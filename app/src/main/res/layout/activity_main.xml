@@ -76,7 +76,13 @@
         android:layout_marginTop="20dp"
         android:background="@drawable/rv_background"
         android:padding="15dp"
-        android:stretchColumns="*">
-    </TableLayout>
+        android:stretchColumns="*"></TableLayout>
+
+    <Button
+        android:id="@+id/testBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="getWeatherByApi"
+        android:text="get" />
 
 </RelativeLayout>

@@ -1,22 +1,28 @@
 package com.example.weatherapp;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.room.Room;
+
+import com.example.weatherapp.dao.AppDatabase;
+import com.example.weatherapp.dao.DailyWeatherDao;
+import com.example.weatherapp.model.DailyWeather;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+    AppDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,13 +39,18 @@ public class MainActivity extends AppCompatActivity {
         RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(weatherList);
         recyclerView.setAdapter(rvAdapter);
 
-        //List view weather by day
-//        ListViewAdapter lvAdapter = new ListViewAdapter(this, weatherList);
 
-//        ListView listView = findViewById(R.id.weatherByDay);
-//        listView.setAdapter(lvAdapter);
-
-        initTable(weatherList);
+//        db = Room.databaseBuilder(getApplicationContext(), AppDatabase .class, "DemoRoom").allowMainThreadQueries().build();
+        Button button = findViewById(R.id.testBtn);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ApiService apiService = new ApiService(getApplicationContext());
+//                apiService.getHourlyWeather(20.2545421, 105.9764854, 24);
+                apiService.getDailyWeather(20.2545421, 105.9764854, 7);
+//                apiService.getGeocoding("Thanh Hoa");
+            }
+        });
     }
 
     private List<Weather> mockWeatherList() {
@@ -58,29 +69,9 @@ public class MainActivity extends AppCompatActivity {
         return (int) ((Math.random() * (max - min)) + min);
     }
 
-    public void initTable(List<Weather> weatherList) {
-        for (int i = 0; i < weatherList.size(); i++) {
-            TableLayout tableLayout = findViewById(R.id.tableLayout);
-            TableRow row = new TableRow(MainActivity.this);
-            TextView day = new TextView(MainActivity.this);
-            day.setText("Friday");
-            row.addView(day);
-            TextView humidity = new TextView(MainActivity.this);
-            humidity.setText(Integer.toString((int) weatherList.get(i).getHumidity()));
-            row.addView(humidity);
-            ImageView dayIcon = new ImageView(MainActivity.this);
-            dayIcon.setImageResource(R.drawable.sun);
-            TableLayout.LayoutParams params = new TableLayout.LayoutParams(25,25);
-            dayIcon.setLayoutParams(params);
-            row.addView(dayIcon);
-            ImageView nightIcon = new ImageView(MainActivity.this);
-            params = new TableLayout.LayoutParams(20, 20);
-            nightIcon.setImageResource(R.drawable.moon);
-            nightIcon.setLayoutParams(params);
-            row.addView(nightIcon);
-            tableLayout.addView(row);
-        }
-    }
+
+
+
 
 
 }

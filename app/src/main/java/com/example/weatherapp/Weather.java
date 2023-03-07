@@ -7,6 +7,7 @@ public class Weather {
     private double temperature;
     private double humidity;
 
+
     public Weather() {
     }
 
