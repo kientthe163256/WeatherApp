@@ -6,14 +6,15 @@ import androidx.room.Insert;
 import androidx.room.Query;
 
 import com.example.weatherapp.model.DailyWeather;
+import com.example.weatherapp.model.HourlyWeather;
 
 import java.util.List;
 
 @Dao
 public interface DailyWeatherDao {
-    @Query("SELECT * from DailyWeather")
-    List<DailyWeather> getAll();
+    @Query("SELECT * from DailyWeather where location_id = :locationId and time between :fromTime and :toTime")
+    List<DailyWeather> getByLocationId(int locationId, long fromTime, long toTime);
 
     @Insert
-    void insertAll(List<DailyWeather> weatherList);
+    void insert(List<DailyWeather> weatherList);
 }

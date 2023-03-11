@@ -9,14 +9,16 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.weatherapp.model.HourlyWeather;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder> {
-    private List<Weather> weatherList;
+    private List<HourlyWeather> weatherList;
 
-    public RecyclerViewAdapter(List<Weather> weatherList) {
+    public RecyclerViewAdapter(List<HourlyWeather> weatherList) {
         this.weatherList = weatherList;
     }
 
@@ -62,11 +64,14 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Date weatherTime = weatherList.get(position).getTime();
+        long timeMillis = weatherList.get(position).getTime();
+        Date weatherTime = new Date(timeMillis);
         String hourAndMinute = new SimpleDateFormat("HH:mm").format(weatherTime);
         holder.getTime().setText(hourAndMinute);
         holder.getIcon().setImageResource(R.drawable.moon);
-        holder.getTemperature().setText(Integer.toString((int) weatherList.get(position).getTemperature()));
+        double tempInKelvin = weatherList.get(position).getTemperature();
+        int tempInCelsius =  (int) (tempInKelvin - 273.15);
+        holder.getTemperature().setText(String.valueOf(tempInCelsius));
         holder.getHumidity().setText(Integer.toString((int) weatherList.get(position).getHumidity()));
     }
 

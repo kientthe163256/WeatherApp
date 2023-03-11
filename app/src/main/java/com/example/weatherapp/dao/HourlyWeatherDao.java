@@ -11,9 +11,9 @@ import java.util.List;
 
 @Dao
 public interface HourlyWeatherDao {
-    @Query("SELECT * from HourlyWeather")
-    List<HourlyWeather> getAll();
+    @Query("SELECT * from HourlyWeather where location_id = :locationId and time between :fromTime and :toTime")
+    List<HourlyWeather> getByLocationId(int locationId, long fromTime, long toTime);
 
     @Insert
-    void insertAll(List<HourlyWeather> weatherList);
+    void insert(List<HourlyWeather> weatherList);
 }

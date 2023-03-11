@@ -9,9 +9,8 @@ import java.util.Date;
 
 @Entity(foreignKeys = {@ForeignKey(entity = Location.class,
         parentColumns = "id",
-        childColumns = "locationId",
+        childColumns = "location_id",
         onDelete = ForeignKey.CASCADE)})
-
 public class DailyWeather {
     @PrimaryKey(autoGenerate = true)
     private long id;
@@ -32,6 +31,7 @@ public class DailyWeather {
 
     private String description;
 
+    @ColumnInfo(name = "location_id")
     private long locationId;
 
     @ColumnInfo(name = "last_update")
@@ -52,22 +52,6 @@ public class DailyWeather {
         this.description = description;
         Date now = new Date();
         lastUpdate = now.getTime();
-    }
-
-    public long getLocationId() {
-        return locationId;
-    }
-
-    public void setLocationId(long locationId) {
-        this.locationId = locationId;
-    }
-
-    public long getLastUpdate() {
-        return lastUpdate;
-    }
-
-    public void setLastUpdate(long lastUpdate) {
-        this.lastUpdate = lastUpdate;
     }
 
     public long getId() {
@@ -132,5 +116,21 @@ public class DailyWeather {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public long getLocationId() {
+        return locationId;
+    }
+
+    public void setLocationId(long locationId) {
+        this.locationId = locationId;
+    }
+
+    public long getLastUpdate() {
+        return lastUpdate;
+    }
+
+    public void setLastUpdate(long lastUpdate) {
+        this.lastUpdate = lastUpdate;
     }
 }

@@ -1,4 +1,4 @@
-package com.example.weatherapp;
+package com.example.weatherapp.service;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
@@ -12,8 +12,8 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.weatherapp.MainActivity;
 import com.example.weatherapp.dao.AppDatabase;
-import com.example.weatherapp.dao.DailyWeatherDao;
 import com.example.weatherapp.model.DailyWeather;
 import com.example.weatherapp.model.HourlyWeather;
 import com.example.weatherapp.model.Location;
@@ -23,7 +23,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class ApiService {
@@ -68,7 +67,11 @@ public class ApiService {
                                 int pressure = main.getInt("pressure");
                                 int humidity = main.getInt("humidity");
 
-//                                weatherList.add(new HourlyWeather(time, temperature, feelsLike, pressure, humidity));
+                                JSONObject weather = hourlyData.getJSONArray("weather").getJSONObject(0);
+                                String mainWeather = weather.getString("main");
+                                String description = weather.getString("description");
+
+                                weatherList.add(new HourlyWeather(time, temperature, feelsLike, pressure, humidity, mainWeather, description));
                             }
                             //TODO: add data to db
 
@@ -123,7 +126,6 @@ public class ApiService {
                                 weatherList.add(new DailyWeather(time, sunrise, sunset, minTemp, maxTemp, mainWeather, description));
                             }
                             //TODO: add data to db
-                            System.out.println(weatherList.size());
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -145,6 +147,7 @@ public class ApiService {
             return;
         }
         String requestUrl = geocodingUrl + "?q=" + locationName
+                + "&limit=5"
                 + "&appid=" + apiKey;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl,
                 new Response.Listener<String>() {
@@ -164,7 +167,6 @@ public class ApiService {
                                 locationList.add(new Location(name, latitude, longitude, state, country));
                             }
                             //TODO: add data to db
-
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -181,7 +183,7 @@ public class ApiService {
     }
 
 
-    private boolean hasInternetConnection() {
+    public boolean hasInternetConnection() {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         return cm.getNetworkCapabilities(cm.getActiveNetwork()) != null;
     }
