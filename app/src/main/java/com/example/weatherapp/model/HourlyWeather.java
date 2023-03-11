@@ -53,6 +53,19 @@ public class HourlyWeather {
         this.lastUpdate = now.getTime();
     }
 
+    public HourlyWeather(long time, double temperature, double feelsLike, int pressure, int humidity, String weather, String description,long locationId) {
+        this.time = time;
+        this.temperature = temperature;
+        this.feelsLike = feelsLike;
+        this.pressure = pressure;
+        this.humidity = humidity;
+        this.weather = weather;
+        this.description = description;
+        this.locationId = locationId;
+        Date now = new Date();
+        this.lastUpdate = now.getTime();
+    }
+
     public long getId() {
         return id;
     }

@@ -16,4 +16,8 @@ public interface HourlyWeatherDao {
 
     @Insert
     void insert(List<HourlyWeather> weatherList);
+
+    //    Test HourlyWeather DB
+    @Query("SELECT * from HourlyWeather where location_id = :locationId")
+    List<HourlyWeather> getByLocationIdTest(int locationId);
 }

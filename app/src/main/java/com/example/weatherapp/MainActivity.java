@@ -220,6 +220,8 @@ public class MainActivity extends AppCompatActivity {
                                 MainActivity.location.setState(address.getAdminArea());
                                 MainActivity.location.setCountry(address.getCountryName());
                                 tvLocationName.setText(address.getSubAdminArea());
+
+                                insertLocation(MainActivity.location);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -235,6 +237,10 @@ public class MainActivity extends AppCompatActivity {
         ;
     }
 
+    private void insertLocation(@NonNull com.example.weatherapp.model.Location location){
+        locationDao.insert(location);
+    }
+
     private class HourlyTask extends AsyncTask<Double, Integer, Integer> {
         @Override
         protected Integer doInBackground(Double... doubles) {
@@ -243,12 +249,16 @@ public class MainActivity extends AppCompatActivity {
                     + "&lon=" + doubles[1]
                     + "&cnt=" + cnt
                     + "&appid=" + APIKEY;
+
+            long idLocation = locationDao.getIdLocationBylatitudeAndlongitude(MainActivity.location.getLatitude(), MainActivity.location.getLongitude());
+            List<HourlyWeather> hourlyWeathers = new ArrayList<>();
+
             StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl,
                     new Response.Listener<String>() {
                         @Override
                         public void onResponse(String response) {
                             try {
-                                List<HourlyWeather> hourlyWeathers = new ArrayList<>();
+//                                List<HourlyWeather> hourlyWeathers = new ArrayList<>();
                                 JSONObject jsonResponse = new JSONObject(response);
                                 JSONArray hourlyDataArray = jsonResponse.getJSONArray("list");
                                 for (int i = 0; i < hourlyDataArray.length(); i++) {
@@ -267,7 +277,7 @@ public class MainActivity extends AppCompatActivity {
                                     String mainWeather = weather.getString("main");
                                     String description = weather.getString("description");
 
-                                    hourlyWeathers.add(new HourlyWeather(time, temperature, feelsLike, pressure, humidity, mainWeather, description));
+                                    hourlyWeathers.add(new HourlyWeather(time, temperature, feelsLike, pressure, humidity, mainWeather, description,idLocation));
                                 }
                                 JSONObject city = jsonResponse.getJSONObject("city");
                                 JSONObject coord = city.getJSONObject("coord");
@@ -296,7 +306,13 @@ public class MainActivity extends AppCompatActivity {
             );
             RequestQueue requestQueue = Volley.newRequestQueue(context);
             requestQueue.add(stringRequest);
+
+            insertHourlyWeather(hourlyWeathers);
             return 1;
+        }
+
+        private void insertHourlyWeather(List<HourlyWeather> weatherList){
+            hourlyWeatherDao.insert(weatherList);
         }
     }
 }

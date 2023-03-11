@@ -17,6 +17,9 @@ public abstract class LocationDao {
     @Query("SELECT * from Location")
     public abstract List<Location> getAllLocations();
 
+    @Query("SELECT id from Location where latitude = :latitude and longitude = :longitude")
+    public abstract long getIdLocationBylatitudeAndlongitude(double latitude,double longitude);
+
     @Insert
     public abstract void insert(Location location);
 
