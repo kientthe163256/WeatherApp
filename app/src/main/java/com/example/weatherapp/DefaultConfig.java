@@ -1,7 +1,7 @@
 package com.example.weatherapp;
 
-import com.example.weatherapp.model.Location;
+import com.example.weatherapp.model.AppLocation;
 
 public class DefaultConfig {
-    public static final Location defaultLocation = new Location("Hoan Kiem", 21.03, 105.85, "Ha Noi", "VN");
+    public static final AppLocation DEFAULT_APP_LOCATION = new AppLocation("Hoan Kiem", 21.03, 105.85, "Ha Noi", "VN");
 }

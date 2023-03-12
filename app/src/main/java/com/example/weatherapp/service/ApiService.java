@@ -13,17 +13,15 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.weatherapp.dao.AppDatabase;
-import com.example.weatherapp.dao.DailyWeatherDao;
 import com.example.weatherapp.model.DailyWeather;
 import com.example.weatherapp.model.HourlyWeather;
-import com.example.weatherapp.model.Location;
+import com.example.weatherapp.model.AppLocation;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class ApiService {
@@ -144,7 +142,7 @@ public class ApiService {
                     public void onResponse(String response) {
                         try {
                             JSONArray jsonArray = new JSONArray(response);
-                            List<Location> locationList = new ArrayList<>();
+                            List<AppLocation> appLocationList = new ArrayList<>();
                             for (int i = 0; i < jsonArray.length(); i++) {
                                 JSONObject location = jsonArray.getJSONObject(i);
                                 String name = location.getString("name");
@@ -153,7 +151,7 @@ public class ApiService {
                                 String state = location.getString("state");
                                 String country = location.getString("country");
 
-                                locationList.add(new Location(name, latitude, longitude, state, country));
+                                appLocationList.add(new AppLocation(name, latitude, longitude, state, country));
                             }
                             //TODO: add data to db
 

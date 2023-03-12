@@ -4,7 +4,7 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity
-public class Location {
+public class AppLocation {
     @PrimaryKey(autoGenerate = true)
     private long id;
 
@@ -14,10 +14,10 @@ public class Location {
     private String state;
     private String country;
 
-    public Location() {
+    public AppLocation() {
     }
 
-    public Location(String name, double latitude, double longitude, String state, String country) {
+    public AppLocation(String name, double latitude, double longitude, String state, String country) {
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -75,7 +75,7 @@ public class Location {
 
     @Override
     public String toString() {
-        return "Location{" +
+        return "AppLocation{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", latitude=" + latitude +

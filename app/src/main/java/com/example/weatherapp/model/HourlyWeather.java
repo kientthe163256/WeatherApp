@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey;
 
 import java.util.Date;
 
-@Entity(foreignKeys = {@ForeignKey(entity = Location.class,
+@Entity(foreignKeys = {@ForeignKey(entity = AppLocation.class,
         parentColumns = "id",
         childColumns = "location_id",
         onDelete = ForeignKey.CASCADE)})

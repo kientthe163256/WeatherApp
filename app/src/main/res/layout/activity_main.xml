@@ -1,83 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@drawable/background"
+  tools:context=".MainActivity">
+
+
+  <LinearLayout
+    android:id="@+id/generalInfo"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/background"
-    tools:context=".MainActivity">
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:layout_marginTop="80dp">
+    <TextView
+      android:id="@+id/location"
+      style="@style/normalTextStyle"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Hoa Lac" />
+    <TextView
+      android:id="@+id/temperature"
+      style="@style/headingTextStyle"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="19" />
+    <TextView
+      style="@style/smallTextStyle"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="20dp"
+      android:text="Thu, 23:57" />
+  </LinearLayout>
 
+  <androidx.recyclerview.widget.RecyclerView
+    android:id="@+id/weatherByHour"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_below="@id/generalInfo"
+    android:layout_marginHorizontal="15dp"
+    android:layout_marginTop="100dp"
+    android:background="@drawable/rv_background"
+    android:padding="15dp" />
 
-    <RelativeLayout
-        android:id="@+id/generalInfo"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="50dp"
-        android:layout_marginTop="80dp">
+  <!--    <ListView-->
+  <!--        android:id="@+id/weatherByDay"-->
+  <!--        android:layout_width="match_parent"-->
+  <!--        android:layout_height="wrap_content"-->
+  <!--        android:layout_below="@id/weatherByHour"-->
+  <!--        android:layout_marginHorizontal="15dp"-->
+  <!--        android:layout_marginTop="20dp"-->
+  <!--        android:background="@drawable/rv_background"-->
+  <!--        android:padding="15dp" />-->
 
-        <TextView
-            android:id="@+id/temperature"
-            style="@style/headingTextStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="19" />
-
-        <TextView
-            android:id="@+id/location"
-            style="@style/normalTextStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/temperature"
-            android:text="Hoa Lac" />
-
-        <ImageView
-            android:id="@+id/star_icon"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:layout_marginStart="150dp"
-            android:layout_toEndOf="@id/temperature"
-            android:src="@drawable/moon" />
-
-        <TextView
-            style="@style/smallTextStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/location"
-            android:layout_marginTop="20dp"
-            android:text="Thu, 23:57" />
-    </RelativeLayout>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/weatherByHour"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/generalInfo"
-        android:layout_marginHorizontal="15dp"
-        android:layout_marginTop="100dp"
-        android:background="@drawable/rv_background"
-        android:padding="15dp" />
-
-    <!--    <ListView-->
-    <!--        android:id="@+id/weatherByDay"-->
-    <!--        android:layout_width="match_parent"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:layout_below="@id/weatherByHour"-->
-    <!--        android:layout_marginHorizontal="15dp"-->
-    <!--        android:layout_marginTop="20dp"-->
-    <!--        android:background="@drawable/rv_background"-->
-    <!--        android:padding="15dp" />-->
-
-    <TableLayout
-        android:id="@+id/tableLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/weatherByHour"
-        android:layout_marginHorizontal="15dp"
-        android:layout_marginTop="20dp"
-        android:background="@drawable/rv_background"
-        android:padding="15dp"
-        android:stretchColumns="*"></TableLayout>
-
+  <TableLayout
+    android:id="@+id/tableLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_below="@id/weatherByHour"
+    android:layout_marginHorizontal="15dp"
+    android:layout_marginTop="20dp"
+    android:background="@drawable/rv_background"
+    android:padding="15dp"
+    android:stretchColumns="*" />
 
 
 </RelativeLayout>
