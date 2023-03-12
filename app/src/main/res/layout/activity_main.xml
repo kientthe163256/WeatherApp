@@ -1,61 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:fillViewport="true"
+  android:layout_height="wrap_content">
+
+  <RelativeLayout
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:paddingBottom="50dp"
+    android:layout_height="wrap_content"
     android:background="@drawable/background"
+    android:fillViewport="true"
     tools:context=".MainActivity">
 
-
     <RelativeLayout
-        android:id="@+id/generalInfo"
-        android:layout_width="match_parent"
+      android:id="@+id/generalInfo"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="50dp"
+      android:layout_marginTop="80dp">
+
+      <TextView
+        android:id="@+id/temperature"
+        style="@style/headingTextStyle"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="50dp"
-        android:layout_marginTop="80dp">
+        android:text="19" />
 
-        <TextView
-            android:id="@+id/temperature"
-            style="@style/headingTextStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="19" />
+      <TextView
+        android:id="@+id/location"
+        style="@style/normalTextStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/temperature"
+        android:text="Hoa Lac" />
 
-        <TextView
-            android:id="@+id/location"
-            style="@style/normalTextStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/temperature"
-            android:text="Hoa Lac" />
+      <ImageView
+        android:id="@+id/star_icon"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginStart="150dp"
+        android:layout_toEndOf="@id/temperature"
+        android:src="@drawable/moon" />
 
-        <ImageView
-            android:id="@+id/star_icon"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:layout_marginStart="150dp"
-            android:layout_toEndOf="@id/temperature"
-            android:src="@drawable/moon" />
-
-        <TextView
-            style="@style/smallTextStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/location"
-            android:layout_marginTop="20dp"
-            android:text="Thu, 23:57" />
+      <TextView
+        style="@style/smallTextStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/location"
+        android:layout_marginTop="20dp"
+        android:id="@+id/date_time"
+        android:text="Thu, 23:57" />
     </RelativeLayout>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/weatherByHour"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/generalInfo"
-        android:layout_marginHorizontal="15dp"
-        android:layout_marginTop="100dp"
-        android:background="@drawable/rv_background"
-        android:padding="15dp" />
+      android:id="@+id/weatherByHour"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_below="@id/generalInfo"
+      android:layout_marginHorizontal="15dp"
+      android:layout_marginTop="100dp"
+      android:background="@drawable/rv_background"
+      android:padding="15dp" />
 
     <!--    <ListView-->
     <!--        android:id="@+id/weatherByDay"-->
@@ -68,21 +75,23 @@
     <!--        android:padding="15dp" />-->
 
     <TableLayout
-        android:id="@+id/tableLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/weatherByHour"
-        android:layout_marginHorizontal="15dp"
-        android:layout_marginTop="20dp"
-        android:background="@drawable/rv_background"
-        android:padding="15dp"
-        android:stretchColumns="*"></TableLayout>
+      android:id="@+id/daily_weather"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_below="@id/weatherByHour"
+      android:layout_marginHorizontal="15dp"
+      android:layout_marginTop="20dp"
+      android:background="@drawable/rv_background"
+      android:padding="15dp"
+      android:stretchColumns="*" />
 
     <Button
-        android:id="@+id/testBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:onClick="getWeatherByApi"
-        android:text="get" />
+      android:id="@+id/testBtn"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:onClick="getWeatherByApi"
+      android:background="@color/design_default_color_primary_dark"
+      android:text="get" />
 
-</RelativeLayout>
+  </RelativeLayout>
+</ScrollView>

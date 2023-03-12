@@ -49,34 +49,31 @@ public class ApiService {
                 + "&cnt=" + numberOfHours
                 + "&appid=" + apiKey;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        try {
-                            JSONObject jsonResponse = new JSONObject(response);
-                            JSONArray hourlyDataArray = jsonResponse.getJSONArray("list");
-                            List<HourlyWeather> weatherList = new ArrayList<>();
-                            for (int i = 0; i < hourlyDataArray.length(); i++) {
-                                JSONObject hourlyData = hourlyDataArray.getJSONObject(i);
-                                //time in milliseconds to java Date
-                                long time = hourlyData.getLong("dt") * 1000;
+            response -> {
+                try {
+                    JSONObject jsonResponse = new JSONObject(response);
+                    JSONArray hourlyDataArray = jsonResponse.getJSONArray("list");
+                    List<HourlyWeather> weatherList = new ArrayList<>();
+                    for (int i = 0; i < hourlyDataArray.length(); i++) {
+                        JSONObject hourlyData = hourlyDataArray.getJSONObject(i);
+                        //time in milliseconds to java Date
+                        long time = hourlyData.getLong("dt") * 1000;
 
-                                //get main data
-                                JSONObject main = hourlyData.getJSONObject("main");
-                                double temperature = main.getDouble("temp");
-                                double feelsLike = main.getDouble("feels_like");
-                                int pressure = main.getInt("pressure");
-                                int humidity = main.getInt("humidity");
+                        //get main data
+                        JSONObject main = hourlyData.getJSONObject("main");
+                        double temperature = main.getDouble("temp");
+                        double feelsLike = main.getDouble("feels_like");
+                        int pressure = main.getInt("pressure");
+                        int humidity = main.getInt("humidity");
 
 //                                weatherList.add(new HourlyWeather(time, temperature, feelsLike, pressure, humidity));
-                            }
-                            //TODO: add data to db
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
                     }
-                }, new Response.ErrorListener() {
+                    //TODO: add data to db
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show();
@@ -128,12 +125,7 @@ public class ApiService {
                             e.printStackTrace();
                         }
                     }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show();
-            }
-        }
+                }, error -> Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show()
         );
         RequestQueue requestQueue = Volley.newRequestQueue(context);
         requestQueue.add(stringRequest);

@@ -1,77 +1,169 @@
 package com.example.weatherapp;
 
 import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.util.TypedValue;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
+import android.widget.TableRow.LayoutParams;
 import android.widget.TextView;
-
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.room.Room;
-
 import com.example.weatherapp.dao.AppDatabase;
-import com.example.weatherapp.dao.DailyWeatherDao;
 import com.example.weatherapp.model.DailyWeather;
-
+import com.example.weatherapp.model.HourlyWeather;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
-    AppDatabase db;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+  AppDatabase db;
 
-        List<Weather> weatherList = mockWeatherList();
-        //Recycler view weather by hour
-        RecyclerView recyclerView = findViewById(R.id.weatherByHour);
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
 
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
-        recyclerView.setLayoutManager(layoutManager);
+    List<HourlyWeather> hourlyWeathers = mockWeatherList();
+    List<DailyWeather> dailyWeathers = mockDailyWeatherList();
 
-        RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(weatherList);
-        recyclerView.setAdapter(rvAdapter);
+    TextView currentTemp = findViewById(R.id.temperature);
+    currentTemp.setText((int) hourlyWeathers.get(0).getTemperature() + "°C");
 
+    TextView dateTime = findViewById(R.id.date_time);
+    String dayOfWeek = new SimpleDateFormat("EE", Locale.ENGLISH).format(
+        new Date());
+    String timeStr = new SimpleDateFormat("HH:mm", Locale.ENGLISH).format(
+        new Date());
+    dateTime.setText(dayOfWeek + ", " + timeStr);
 
-//        db = Room.databaseBuilder(getApplicationContext(), AppDatabase .class, "DemoRoom").allowMainThreadQueries().build();
-        Button button = findViewById(R.id.testBtn);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ApiService apiService = new ApiService(getApplicationContext());
-//                apiService.getHourlyWeather(20.2545421, 105.9764854, 24);
-                apiService.getDailyWeather(20.2545421, 105.9764854, 7);
-//                apiService.getGeocoding("Thanh Hoa");
-            }
-        });
+    RecyclerView recyclerView = findViewById(R.id.weatherByHour);
+    LinearLayoutManager layoutManager = new LinearLayoutManager(this,
+        LinearLayoutManager.HORIZONTAL, false);
+    recyclerView.setLayoutManager(layoutManager);
+
+    RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(hourlyWeathers);
+    recyclerView.setAdapter(rvAdapter);
+
+    Button button = findViewById(R.id.testBtn);
+    button.setOnClickListener(v -> {
+      ApiService apiService = new ApiService(getApplicationContext());
+      apiService.getDailyWeather(20.2545421, 105.9764854, 7);
+    });
+    setUpDailyWeatherTable(dailyWeathers);
+  }
+
+  private void setUpDailyWeatherTable(List<DailyWeather> dailyWeathers) {
+    TableLayout tableLayout = findViewById(R.id.daily_weather);
+    LayoutInflater inflater = getLayoutInflater();
+    int maxTemp = getMaxTemp(dailyWeathers);
+    int minTemp = getMinTemp(dailyWeathers);
+    int maxTempDiff = maxTemp - minTemp;
+    for (DailyWeather dailyWeather : dailyWeathers) {
+      TableRow row = inflater.inflate(R.layout.lv_item, null, false)
+          .findViewById(R.id.row_day);
+      TextView date = row.findViewById(R.id.row_day_day);
+      String dateStr = new SimpleDateFormat("EEEE", Locale.ENGLISH).format(
+          new Date(dailyWeather.getTime()));
+      date.setText(dateStr);
+      ImageView icon = row.findViewById(R.id.row_day_icon);
+      HashMap<String, Integer> iconMap = getIconMap();
+      iconMap.put("Cloudy", R.drawable.cloudy);
+      iconMap.put("Sunny", R.drawable.sun);
+      icon.setImageResource(iconMap.getOrDefault(dailyWeather.getWeather(), R.drawable.cloudy));
+
+      View tempDiff = row.findViewById(R.id.row_day_range_fg);
+      ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) tempDiff.getLayoutParams();
+      params.leftMargin = dpToPx((int) ((dailyWeather.getMinTemp() - minTemp) / maxTempDiff * 100));
+      int width = dpToPx(
+          (int) ((dailyWeather.getMaxTemp() - dailyWeather.getMinTemp()) / maxTempDiff * 100));
+      params.width = dpToPx(width);
+      tempDiff.setLayoutParams(params);
+
+      TextView minTempView = row.findViewById(R.id.row_day_min_temp);
+      minTempView.setText(String.valueOf((int) dailyWeather.getMinTemp()));
+
+      TextView maxTempView = row.findViewById(R.id.row_day_max_temp);
+      maxTempView.setText(String.valueOf((int) dailyWeather.getMaxTemp()));
+      tableLayout.addView(row);
     }
+  }
 
-    private List<Weather> mockWeatherList() {
-        List<Weather> weatherList = new ArrayList<>();
-        for (int i = 0; i < 20; i++) {
-            Weather weather = new Weather();
-            weather.setTime(new Date());
-            weather.setTemperature(getRandomNumber(5, 32));
-            weather.setHumidity(getRandomNumber(1, 80));
-            weatherList.add(weather);
-        }
-        return weatherList;
+  private int dpToPx(int dp) {
+    return dp * (getResources().getDisplayMetrics().densityDpi
+        / DisplayMetrics.DENSITY_DEFAULT);
+  }
+
+  private int getMaxTemp(List<DailyWeather> dailyWeathers) {
+    return dailyWeathers.stream().map(
+        dailyWeather -> (int) dailyWeather.getMaxTemp()).max(Integer::compareTo).orElse(0);
+  }
+
+  private int getMinTemp(List<DailyWeather> dailyWeathers) {
+    return dailyWeathers.stream().map(
+        dailyWeather -> (int) dailyWeather.getMinTemp()).min(Integer::compareTo).orElse(0);
+  }
+
+  @NonNull
+  private HashMap<String, Integer> getIconMap() {
+    HashMap<String, Integer> iconMap = new HashMap<>();
+    iconMap.put("Sunny", R.drawable.sun);
+    iconMap.put("Cloudy", R.drawable.cloudy);
+    return iconMap;
+  }
+
+  private List<HourlyWeather> mockWeatherList() {
+    List<HourlyWeather> weatherList = new ArrayList<>();
+    for (int i = 0; i < 20; i++) {
+      HourlyWeather weather = new HourlyWeather();
+      weather.setTemperature(getRandomNumber(20, 30));
+      weather.setHumidity(getRandomNumber(20, 30));
+      weather.setTime(Instant.now().plus(i, ChronoUnit.HOURS).toEpochMilli());
+      weather.setFeelsLike(getRandomNumber(20, 30));
+      weather.setPressure(getRandomNumber(20, 30));
+      weather.setHumidity(getRandomNumber(40, 80));
+      if (getRandomNumber(0, 2) == 0) {
+        weather.setWeather("Sunny");
+      } else {
+        weather.setWeather("Cloudy");
+      }
+      weatherList.add(weather);
     }
+    return weatherList;
+  }
 
-    private int getRandomNumber(int min, int max) {
-        return (int) ((Math.random() * (max - min)) + min);
+  private List<DailyWeather> mockDailyWeatherList() {
+    List<DailyWeather> weatherList = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      DailyWeather weather = new DailyWeather();
+      weather.setTime(Instant.now().plus(i, ChronoUnit.DAYS).toEpochMilli());
+      weather.setLastUpdate(Instant.now().toEpochMilli());
+      weather.setMinTemp(getRandomNumber(15, 20));
+      weather.setMaxTemp(weather.getMinTemp() + getRandomNumber(3, 8));
+      if (getRandomNumber(0, 3) != 0) {
+        weather.setWeather("Sunny");
+      } else {
+        weather.setWeather("Cloudy");
+      }
+      weatherList.add(weather);
     }
+    return weatherList;
+  }
 
-
-
-
-
-
+  private int getRandomNumber(int min, int max) {
+    return (int) ((Math.random() * (max - min)) + min);
+  }
 }
