@@ -20,4 +20,7 @@ public interface HourlyWeatherDao {
     //    Test HourlyWeather DB
     @Query("SELECT * from HourlyWeather where location_id = :locationId")
     List<HourlyWeather> getByLocationIdTest(int locationId);
+
+    @Query("Select * from HourlyWeather")
+    List<HourlyWeather> getAllLocations();
 }

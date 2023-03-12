@@ -9,7 +9,6 @@ import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
-import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -100,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
 
         tvLocationName = findViewById(R.id.location);
 
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
         /* Start app -> check permission -> check GPS:
             if on, get current location, call API/load from db (No internet)
             if off, request turn on GPS:
@@ -117,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            //permission is granted
+            //permission is already granted
             checkGPS();
         } else {
             //request for permission
@@ -145,7 +144,6 @@ public class MainActivity extends AppCompatActivity {
                     //when GPS is already on
                     LocationSettingsResponse response = task.getResult(ApiException.class);
                     getCurrentLocation();
-                    new HourlyTask().execute(location.getLatitude(), location.getLongitude(), 24.0);
                 } catch (ApiException e) {
                     //when GPS is off
                     switch (e.getStatusCode()) {
@@ -189,10 +187,8 @@ public class MainActivity extends AppCompatActivity {
             }
             else {
                 //user don't turn on GPS, set location to default location
-                MainActivity.location = DefaultConfig.defaultLocation;
-                if (hasInternetConnection()){
-                    new HourlyTask().execute(location.getLatitude(), location.getLongitude(), 24.0);
-                }
+                location = DefaultConfig.defaultLocation;
+                getHourlyWeather(location.getLatitude(), location.getLongitude(), 24);
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
@@ -204,36 +200,33 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Please grant location permissions", Toast.LENGTH_SHORT).show();
             return;
         }
-        fusedLocationProviderClient.getLastLocation()
-                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        if (location != null) {
-                            Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
-                            List<Address> addresses = null;
-                            try {
-                                addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                                Address address = addresses.get(0);
-                                MainActivity.location.setLatitude(address.getLatitude());
-                                MainActivity.location.setLongitude(location.getLongitude());
-                                MainActivity.location.setName(address.getSubAdminArea());
-                                MainActivity.location.setState(address.getAdminArea());
-                                MainActivity.location.setCountry(address.getCountryName());
-                                tvLocationName.setText(address.getSubAdminArea());
+        fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_LOW_POWER, null).addOnSuccessListener(new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+                if (location != null) {
+                    Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
+                    List<Address> addresses = null;
+                    try {
+                        addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                        Address address = addresses.get(0);
+                        MainActivity.location.setLatitude(address.getLatitude());
+                        MainActivity.location.setLongitude(location.getLongitude());
+                        MainActivity.location.setName(address.getSubAdminArea());
+                        MainActivity.location.setState(address.getAdminArea());
+                        MainActivity.location.setCountry(address.getCountryName());
+                        tvLocationName.setText(address.getSubAdminArea());
 
-                                insertLocation(MainActivity.location);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                        if (hasInternetConnection()){
+                            getHourlyWeather(location.getLatitude(), location.getLongitude(), 24);
                         }
+
+//                                insertLocation(MainActivity.location);
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                })
-                .addOnCompleteListener(new OnCompleteListener<Location>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Location> task) {
-                        new HourlyTask().execute(MainActivity.location.getLatitude(), MainActivity.location.getLongitude(), 24.0);
-                    }
-                })
+                }
+            }
+        })
         ;
     }
 
@@ -241,78 +234,74 @@ public class MainActivity extends AppCompatActivity {
         locationDao.insert(location);
     }
 
-    private class HourlyTask extends AsyncTask<Double, Integer, Integer> {
-        @Override
-        protected Integer doInBackground(Double... doubles) {
-            int cnt = doubles[2].intValue();
-            String requestUrl = HOURLY_WEATHER_URL + "?lat=" + doubles[0]
-                    + "&lon=" + doubles[1]
-                    + "&cnt=" + cnt
-                    + "&appid=" + APIKEY;
+    public void getHourlyWeather(double lat, double lon, int cnt){
+        String requestUrl = HOURLY_WEATHER_URL + "?lat=" + lat
+                + "&lon=" + lon
+                + "&cnt=" + cnt
+                + "&appid=" + APIKEY;
 
-            long idLocation = locationDao.getIdLocationBylatitudeAndlongitude(MainActivity.location.getLatitude(), MainActivity.location.getLongitude());
-            List<HourlyWeather> hourlyWeathers = new ArrayList<>();
+        long idLocation = locationDao.getIdLocationBylatitudeAndlongitude(MainActivity.location.getLatitude(), MainActivity.location.getLongitude());
+        List<HourlyWeather> hourlyWeathers = new ArrayList<>();
 
-            StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl,
-                    new Response.Listener<String>() {
-                        @Override
-                        public void onResponse(String response) {
-                            try {
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
 //                                List<HourlyWeather> hourlyWeathers = new ArrayList<>();
-                                JSONObject jsonResponse = new JSONObject(response);
-                                JSONArray hourlyDataArray = jsonResponse.getJSONArray("list");
-                                for (int i = 0; i < hourlyDataArray.length(); i++) {
-                                    JSONObject hourlyData = hourlyDataArray.getJSONObject(i);
-                                    //time in milliseconds to java Date
-                                    long time = hourlyData.getLong("dt") * 1000;
+                            JSONObject jsonResponse = new JSONObject(response);
+                            JSONArray hourlyDataArray = jsonResponse.getJSONArray("list");
+                            for (int i = 0; i < hourlyDataArray.length(); i++) {
+                                JSONObject hourlyData = hourlyDataArray.getJSONObject(i);
+                                //time in milliseconds to java Date
+                                long time = hourlyData.getLong("dt") * 1000;
 
-                                    //get main data
-                                    JSONObject main = hourlyData.getJSONObject("main");
-                                    double temperature = main.getDouble("temp");
-                                    double feelsLike = main.getDouble("feels_like");
-                                    int pressure = main.getInt("pressure");
-                                    int humidity = main.getInt("humidity");
+                                //get main data
+                                JSONObject main = hourlyData.getJSONObject("main");
+                                double temperature = main.getDouble("temp");
+                                double feelsLike = main.getDouble("feels_like");
+                                int pressure = main.getInt("pressure");
+                                int humidity = main.getInt("humidity");
 
-                                    JSONObject weather = hourlyData.getJSONArray("weather").getJSONObject(0);
-                                    String mainWeather = weather.getString("main");
-                                    String description = weather.getString("description");
+                                JSONObject weather = hourlyData.getJSONArray("weather").getJSONObject(0);
+                                String mainWeather = weather.getString("main");
+                                String description = weather.getString("description");
 
-                                    hourlyWeathers.add(new HourlyWeather(time, temperature, feelsLike, pressure, humidity, mainWeather, description,idLocation));
-                                }
-                                JSONObject city = jsonResponse.getJSONObject("city");
-                                JSONObject coord = city.getJSONObject("coord");
-                                double lat = coord.getDouble("lat");
-                                double lon = coord.getDouble("lon");
-                                Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
-                                List<Address> addresses = geocoder.getFromLocation(lat, lon, 1);
-                                tvLocationName.setText(addresses.get(0).getSubAdminArea());
-                                //TODO: Bind data to view
-                                RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(hourlyWeathers);
-                                recyclerView.setAdapter(rvAdapter);
-
-                                //TODO: add data to db
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                                hourlyWeathers.add(new HourlyWeather(time, temperature, feelsLike, pressure, humidity, mainWeather, description,idLocation));
                             }
+                            Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
+                            List<Address> addresses = geocoder.getFromLocation(lat, lon, 1);
+                            tvLocationName.setText(addresses.get(0).getSubAdminArea());
+                            //TODO: Bind data to view
+                            RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(hourlyWeathers);
+                            recyclerView.setAdapter(rvAdapter);
+
+                            //TODO: add data to db
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                    }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show();
-                }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("volley", error.toString());
             }
-            );
-            RequestQueue requestQueue = Volley.newRequestQueue(context);
-            requestQueue.add(stringRequest);
-
-            insertHourlyWeather(hourlyWeathers);
-            return 1;
         }
+        );
+        RequestQueue requestQueue = Volley.newRequestQueue(context);
+        requestQueue.add(stringRequest);
+    }
 
-        private void insertHourlyWeather(List<HourlyWeather> weatherList){
-            hourlyWeatherDao.insert(weatherList);
+    public void btnTest(View view){
+        List<HourlyWeather> hourlyWeathers = hourlyWeatherDao.getAllLocations();
+        System.out.println(hourlyWeathers.size());
+        TextView tvTest = findViewById(R.id.tvTest);
+        String s = "";
+        for (int i = 0; i < hourlyWeathers.size(); i++) {
+            s += hourlyWeathers.get(i).toString();
         }
+        tvTest.setText(s);
     }
 }

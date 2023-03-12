@@ -145,4 +145,20 @@ public class HourlyWeather {
     public void setLocationId(long locationId) {
         this.locationId = locationId;
     }
+
+    @Override
+    public String toString() {
+        return "HourlyWeather{" +
+                "id=" + id +
+                ", time=" + time +
+                ", temperature=" + temperature +
+                ", feelsLike=" + feelsLike +
+                ", pressure=" + pressure +
+                ", humidity=" + humidity +
+                ", weather='" + weather + '\'' +
+                ", description='" + description + '\'' +
+                ", lastUpdate=" + lastUpdate +
+                ", locationId=" + locationId +
+                '}';
+    }
 }
