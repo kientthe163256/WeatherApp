@@ -307,12 +307,17 @@ public class MainActivity extends AppCompatActivity {
             RequestQueue requestQueue = Volley.newRequestQueue(context);
             requestQueue.add(stringRequest);
 
+            deleteHourlyWeatherByLocationId(Integer.parseInt(String.valueOf(idLocation)));
             insertHourlyWeather(hourlyWeathers);
             return 1;
         }
 
         private void insertHourlyWeather(List<HourlyWeather> weatherList){
             hourlyWeatherDao.insert(weatherList);
+        }
+
+        private void deleteHourlyWeatherByLocationId(int locationId){
+            hourlyWeatherDao.deleteByLocationId(locationId);
         }
     }
 }
