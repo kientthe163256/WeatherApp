@@ -14,45 +14,37 @@
     android:fillViewport="true"
     tools:context=".MainActivity">
 
-    <RelativeLayout
+    <LinearLayout
       android:id="@+id/generalInfo"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_marginStart="50dp"
+      android:gravity="center"
+      android:orientation="vertical"
       android:layout_marginTop="80dp">
-
-      <TextView
-        android:id="@+id/temperature"
-        style="@style/headingTextStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="19" />
 
       <TextView
         android:id="@+id/location"
         style="@style/normalTextStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/temperature"
         android:text="Hoa Lac" />
 
-      <ImageView
-        android:id="@+id/star_icon"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_marginStart="150dp"
-        android:layout_toEndOf="@id/temperature"
-        android:src="@drawable/moon" />
+      <TextView
+        android:id="@+id/temperature"
+        style="@style/headingTextStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginVertical="10dp"
+        android:paddingLeft="10dp"
+        android:text="19" />
 
       <TextView
         style="@style/smallTextStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/location"
-        android:layout_marginTop="20dp"
         android:id="@+id/date_time"
         android:text="Thu, 23:57" />
-    </RelativeLayout>
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
       android:id="@+id/weatherByHour"
@@ -63,16 +55,6 @@
       android:layout_marginTop="100dp"
       android:background="@drawable/rv_background"
       android:padding="15dp" />
-
-    <!--    <ListView-->
-    <!--        android:id="@+id/weatherByDay"-->
-    <!--        android:layout_width="match_parent"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:layout_below="@id/weatherByHour"-->
-    <!--        android:layout_marginHorizontal="15dp"-->
-    <!--        android:layout_marginTop="20dp"-->
-    <!--        android:background="@drawable/rv_background"-->
-    <!--        android:padding="15dp" />-->
 
     <TableLayout
       android:id="@+id/daily_weather"

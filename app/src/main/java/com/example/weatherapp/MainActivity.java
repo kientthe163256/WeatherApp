@@ -2,7 +2,6 @@ package com.example.weatherapp;
 
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,15 +9,18 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
-import android.widget.TableRow.LayoutParams;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.example.weatherapp.adapter.RecyclerViewAdapter;
 import com.example.weatherapp.dao.AppDatabase;
 import com.example.weatherapp.model.DailyWeather;
 import com.example.weatherapp.model.HourlyWeather;
+import com.example.weatherapp.service.ApiService;
+import com.example.weatherapp.util.UIUpdater;
+import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -31,6 +33,7 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
 
   AppDatabase db;
+  UIUpdater timeUIUpdater;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -40,16 +43,19 @@ public class MainActivity extends AppCompatActivity {
     List<HourlyWeather> hourlyWeathers = mockWeatherList();
     List<DailyWeather> dailyWeathers = mockDailyWeatherList();
 
-    TextView currentTemp = findViewById(R.id.temperature);
-    currentTemp.setText((int) hourlyWeathers.get(0).getTemperature() + "°C");
+    int currentTemp = (int) hourlyWeathers.get(0).getTemperature();
+    setUpMainInfo(currentTemp);
+    setUpHourlyWeather(hourlyWeathers);
+    setUpDailyWeather(dailyWeathers);
 
-    TextView dateTime = findViewById(R.id.date_time);
-    String dayOfWeek = new SimpleDateFormat("EE", Locale.ENGLISH).format(
-        new Date());
-    String timeStr = new SimpleDateFormat("HH:mm", Locale.ENGLISH).format(
-        new Date());
-    dateTime.setText(dayOfWeek + ", " + timeStr);
+    Button button = findViewById(R.id.testBtn);
+    button.setOnClickListener(v -> {
+      ApiService apiService = new ApiService(getApplicationContext());
+      apiService.getDailyWeather(20.2545421, 105.9764854, 7);
+    });
+  }
 
+  private void setUpHourlyWeather(List<HourlyWeather> hourlyWeathers) {
     RecyclerView recyclerView = findViewById(R.id.weatherByHour);
     LinearLayoutManager layoutManager = new LinearLayoutManager(this,
         LinearLayoutManager.HORIZONTAL, false);
@@ -57,39 +63,56 @@ public class MainActivity extends AppCompatActivity {
 
     RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(hourlyWeathers);
     recyclerView.setAdapter(rvAdapter);
-
-    Button button = findViewById(R.id.testBtn);
-    button.setOnClickListener(v -> {
-      ApiService apiService = new ApiService(getApplicationContext());
-      apiService.getDailyWeather(20.2545421, 105.9764854, 7);
-    });
-    setUpDailyWeatherTable(dailyWeathers);
   }
 
-  private void setUpDailyWeatherTable(List<DailyWeather> dailyWeathers) {
+  private void setUpMainInfo(int currentTemp) {
+    TextView currentTempView = findViewById(R.id.temperature);
+    currentTempView.setText(currentTemp + "°");
+
+    TextView dateTime = findViewById(R.id.date_time);
+    String dayOfWeek = getDayOfWeek("EE", new Date());
+    timeUIUpdater = new UIUpdater(() -> {
+      dateTime.setText(dayOfWeek + ", " + currentHourAndMinute());
+    }, 1000);
+    timeUIUpdater.startUpdates();
+  }
+
+  private String getDayOfWeek(String format, Date date) {
+    return new SimpleDateFormat(format, Locale.ENGLISH).format(
+        date);
+  }
+
+  private String currentHourAndMinute() {
+    return getDayOfWeek("HH:mm", new Date());
+  }
+
+  private void setUpDailyWeather(List<DailyWeather> dailyWeathers) {
     TableLayout tableLayout = findViewById(R.id.daily_weather);
     LayoutInflater inflater = getLayoutInflater();
     int maxTemp = getMaxTemp(dailyWeathers);
     int minTemp = getMinTemp(dailyWeathers);
     int maxTempDiff = maxTemp - minTemp;
     for (DailyWeather dailyWeather : dailyWeathers) {
-      TableRow row = inflater.inflate(R.layout.lv_item, null, false)
+      TableRow row = inflater.inflate(R.layout.daily_weather_layout, null,
+              false)
           .findViewById(R.id.row_day);
       TextView date = row.findViewById(R.id.row_day_day);
-      String dateStr = new SimpleDateFormat("EEEE", Locale.ENGLISH).format(
-          new Date(dailyWeather.getTime()));
+      String dateStr = getDayOfWeek("EEEE", new Date(dailyWeather.getTime()));
       date.setText(dateStr);
       ImageView icon = row.findViewById(R.id.row_day_icon);
       HashMap<String, Integer> iconMap = getIconMap();
       iconMap.put("Cloudy", R.drawable.cloudy);
       iconMap.put("Sunny", R.drawable.sun);
-      icon.setImageResource(iconMap.getOrDefault(dailyWeather.getWeather(), R.drawable.cloudy));
+      icon.setImageResource(
+          iconMap.getOrDefault(dailyWeather.getWeather(), R.drawable.cloudy));
 
       View tempDiff = row.findViewById(R.id.row_day_range_fg);
       ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) tempDiff.getLayoutParams();
-      params.leftMargin = dpToPx((int) ((dailyWeather.getMinTemp() - minTemp) / maxTempDiff * 100));
+      params.leftMargin = dpToPx(
+          (int) ((dailyWeather.getMinTemp() - minTemp) / maxTempDiff * 100));
       int width = dpToPx(
-          (int) ((dailyWeather.getMaxTemp() - dailyWeather.getMinTemp()) / maxTempDiff * 100));
+          (int) ((dailyWeather.getMaxTemp() - dailyWeather.getMinTemp())
+              / maxTempDiff * 100));
       params.width = dpToPx(width);
       tempDiff.setLayoutParams(params);
 
@@ -109,15 +132,16 @@ public class MainActivity extends AppCompatActivity {
 
   private int getMaxTemp(List<DailyWeather> dailyWeathers) {
     return dailyWeathers.stream().map(
-        dailyWeather -> (int) dailyWeather.getMaxTemp()).max(Integer::compareTo).orElse(0);
+            dailyWeather -> (int) dailyWeather.getMaxTemp()).max(Integer::compareTo)
+        .orElse(0);
   }
 
   private int getMinTemp(List<DailyWeather> dailyWeathers) {
     return dailyWeathers.stream().map(
-        dailyWeather -> (int) dailyWeather.getMinTemp()).min(Integer::compareTo).orElse(0);
+            dailyWeather -> (int) dailyWeather.getMinTemp()).min(Integer::compareTo)
+        .orElse(0);
   }
 
-  @NonNull
   private HashMap<String, Integer> getIconMap() {
     HashMap<String, Integer> iconMap = new HashMap<>();
     iconMap.put("Sunny", R.drawable.sun);
