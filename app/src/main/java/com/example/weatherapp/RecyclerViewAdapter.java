@@ -58,7 +58,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.rv_row, parent, false);
+                .inflate(R.layout.hourly_weather_layout, parent, false);
         return new ViewHolder(view);
     }
 
@@ -66,7 +66,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         long timeMillis = weatherList.get(position).getTime();
         Date weatherTime = new Date(timeMillis);
-        String hourAndMinute = new SimpleDateFormat("HH:mm").format(weatherTime);
+        String hourAndMinute = new SimpleDateFormat("HH").format(weatherTime);
         holder.getTime().setText(hourAndMinute);
         holder.getIcon().setImageResource(R.drawable.moon);
         double tempInKelvin = weatherList.get(position).getTemperature();
