@@ -1,11 +1,13 @@
 package com.example.weatherapp.dao;
 
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 
 import com.example.weatherapp.model.DailyWeather;
 import com.example.weatherapp.model.HourlyWeather;
+import com.example.weatherapp.model.Location;
 
 import java.util.List;
 
@@ -16,6 +18,9 @@ public interface HourlyWeatherDao {
 
     @Insert
     void insert(List<HourlyWeather> weatherList);
+
+    @Query("DELETE from HourlyWeather where location_id = :locationId")
+     void deleteByLocationId(int locationId);
 
     //    Test HourlyWeather DB
     @Query("SELECT * from HourlyWeather where location_id = :locationId")
