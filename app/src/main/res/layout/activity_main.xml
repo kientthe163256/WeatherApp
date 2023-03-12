@@ -15,18 +15,22 @@
     android:orientation="vertical"
     android:gravity="center"
     android:layout_marginTop="80dp">
+
     <TextView
       android:id="@+id/location"
       style="@style/normalTextStyle"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:text="Hoa Lac" />
+
     <TextView
       android:id="@+id/temperature"
       style="@style/headingTextStyle"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:text="19" />
+
+
     <TextView
       style="@style/smallTextStyle"
       android:layout_width="wrap_content"
@@ -64,7 +68,12 @@
     android:layout_marginTop="20dp"
     android:background="@drawable/rv_background"
     android:padding="15dp"
-    android:stretchColumns="*" />
+    android:stretchColumns="*"></TableLayout>
+
+  <TextView
+    android:id="@+id/tvTest"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content" />
 
 
 </RelativeLayout>
