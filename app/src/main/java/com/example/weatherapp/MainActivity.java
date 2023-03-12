@@ -4,7 +4,6 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.IntentSender.SendIntentException;
 import android.content.pm.PackageManager;
 import android.location.Address;
@@ -55,9 +54,9 @@ public class MainActivity extends AppCompatActivity {
 
     private final int REQUEST_CODE = 100;
     private final int REQUEST_CHECK_SETTING = 1001;
-    private final String APIKEY = "35957f6517fce7e6dca5158fc93ba98b";
+    private final String API_KEY = "35957f6517fce7e6dca5158fc93ba98b";
     private final String HOURLY_WEATHER_URL = "https://pro.openweathermap.org/data/2.5/forecast/hourly";
-    private final String DAILY_WEATHER_URL = "https://api.openweathermap.org/data/2.5/forecast/daily";
+    private final String DAILY_WEATHER_URL = "https://pro.openweathermap.org/data/2.5/forecast/daily";
     private final String GEOCODING_URL = "http://api.openweathermap.org/geo/1.0/direct";
 
     public static AppLocation appLocation = new AppLocation();
@@ -219,6 +218,7 @@ public class MainActivity extends AppCompatActivity {
                 MainActivity.appLocation.getLongitude(), 24.0));
     }
 
+
     private void processReceivedLocation(Location location) {
         if (location != null) {
             Geocoder geocoder = new Geocoder(MainActivity.this,
@@ -258,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
             int cnt = doubles[2].intValue();
             String requestUrl =
                 HOURLY_WEATHER_URL + "?lat=" + doubles[0] + "&lon=" + doubles[1]
-                    + "&cnt=" + cnt + "&appid=" + APIKEY;
+                    + "&cnt=" + cnt + "&appid=" + API_KEY;
 
             long idLocation = locationDao.getIdLocationBylatitudeAndlongitude(
                 appLocation.getLatitude(),
