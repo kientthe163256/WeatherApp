@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
     private final int REQUEST_CHECK_SETTING = 1001;
     private final String APIKEY = "35957f6517fce7e6dca5158fc93ba98b";
     private final String HOURLY_WEATHER_URL = "https://pro.openweathermap.org/data/2.5/forecast/hourly";
-    private final String DAILY_WEATHER_URL = "https://api.openweathermap.org/data/2.5/forecast/daily";
+    private final String DAILY_WEATHER_URL = "https://pro.openweathermap.org/data/2.5/forecast/daily";
     private final String GEOCODING_URL = "http://api.openweathermap.org/geo/1.0/direct";
 
     public static Location location = new Location();
@@ -232,21 +232,16 @@ public class MainActivity extends AppCompatActivity {
                         List<Address> addresses = null;
                         try {
                             addresses = geocoder.getFromLocation(
-                                location.getLatitude(),
-                                location.getLongitude(), 1);
+                                    location.getLatitude(), 
+                                    location.getLongitude(),
+                                    1);
                             Address address = addresses.get(0);
-                            MainActivity.location.setLatitude(
-                                address.getLatitude());
-                            MainActivity.location.setLongitude(
-                                location.getLongitude());
-                            MainActivity.location.setName(
-                                address.getSubAdminArea());
-                            MainActivity.location.setState(
-                                address.getAdminArea());
-                            MainActivity.location.setCountry(
-                                address.getCountryName());
-                            tvLocationName.setText(
-                                address.getSubAdminArea());
+                            MainActivity.location.setLatitude(address.getLatitude());
+                            MainActivity.location.setLongitude(location.getLongitude());
+                            MainActivity.location.setName(address.getSubAdminArea());
+                            MainActivity.location.setState(address.getAdminArea());
+                            MainActivity.location.setCountry(address.getCountryName());
+                            tvLocationName.setText(address.getSubAdminArea());
 
                             insertLocation(MainActivity.location);
                         } catch (IOException e) {
@@ -290,27 +285,23 @@ public class MainActivity extends AppCompatActivity {
                         JSONArray hourlyDataArray = jsonResponse.getJSONArray(
                             "list");
                         for (int i = 0; i < hourlyDataArray.length(); i++) {
-                            JSONObject hourlyData = hourlyDataArray.getJSONObject(
-                                i);
+                            JSONObject hourlyData = hourlyDataArray.getJSONObject(i);
                             // time in milliseconds to java Date
                             long time = hourlyData.getLong("dt") * 1000;
 
                             // get main data
-                            JSONObject main = hourlyData.getJSONObject(
-                                "main");
+                            JSONObject main = hourlyData.getJSONObject("main");
                             double temperature = main.getDouble("temp");
                             double feelsLike = main.getDouble("feels_like");
                             int pressure = main.getInt("pressure");
                             int humidity = main.getInt("humidity");
 
-                            JSONObject weather = hourlyData.getJSONArray(
-                                "weather").getJSONObject(0);
+                            JSONObject weather = hourlyData.getJSONArray("weather").getJSONObject(0);
                             String mainWeather = weather.getString("main");
                             String description = weather.getString(
                                 "description");
 
-                            hourlyWeathers.add(
-                                new HourlyWeather(time, temperature,
+                            hourlyWeathers.add(new HourlyWeather(time, temperature,
                                     feelsLike, pressure, humidity,
                                     mainWeather, description, idLocation));
                         }
