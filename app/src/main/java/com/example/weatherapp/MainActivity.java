@@ -306,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
         requestQueue.add(stringRequest);
 
 
-        insertHourlyWeather(hourlyWeathers);
+//        insertHourlyWeather(hourlyWeathers);
     }
 
     private void insertHourlyWeather(List<HourlyWeather> weatherList) {
