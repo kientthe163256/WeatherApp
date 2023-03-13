@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        //test
         db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
             "WeatherApp").allowMainThreadQueries().build();
         locationDao = db.locationDao();
