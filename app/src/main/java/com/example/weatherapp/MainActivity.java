@@ -1,5 +1,6 @@
 package com.example.weatherapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
@@ -62,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
     button.setOnClickListener(v -> {
       ApiService apiService = new ApiService(getApplicationContext());
       apiService.getDailyWeather(20.2545421, 105.9764854, 7);
+      Intent intent = new Intent(this, SearchActivity.class);
+      startActivity(intent);
     });
     setUpDailyWeatherTable(dailyWeathers);
   }

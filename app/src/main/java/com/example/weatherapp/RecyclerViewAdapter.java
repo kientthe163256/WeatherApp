@@ -33,7 +33,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     TextView temperature;
     TextView humidity;
 
-    Button get_btn;
 
     public ViewHolder(@NonNull View view) {
       super(view);
@@ -60,9 +59,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
       return humidity;
     }
 
-    public Button getGet_btn(){
-      return get_btn;
-    }
   }
 
   @NonNull
