@@ -33,6 +33,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.weatherapp.adapter.RecyclerViewAdapter;
 import com.example.weatherapp.dao.AppDatabase;
 import com.example.weatherapp.dao.DailyWeatherDao;
 import com.example.weatherapp.dao.HourlyWeatherDao;
@@ -116,17 +117,37 @@ public class MainActivity extends AppCompatActivity {
         checkLocationPermission();
         List<DailyWeather> dailyWeathers = mockDailyWeatherList();
         setUpDailyWeather(dailyWeathers);
-        //    Location location = checkLocation();
-        //    List<HourlyWeather> hourlyWeathers = api.getHourlyWeather(location);
-        //    setUpHourlyWeather(hourlyWeathers);
-        //    List<DailyWeather> dailyWeathers = api.getDailyWeather(location);
-        //    setUpDailyWeather(dailyWeathers);
+        setUpTimeInfo();
+    }
+
+    private void setUpTimeInfo() {
+        TextView tvTime = findViewById(R.id.date_time);
+        SimpleDateFormat formatter = new SimpleDateFormat("EE, HH:mm");
+        Date date = new Date();
+        tvTime.setText(formatter.format(date));
+    }
+
+    private void setUpCurrentTempInfo(String temp) {
+        TextView tvTemp = findViewById(R.id.temperature);
+        tvTemp.setText(temp);
     }
 
     public boolean hasInternetConnection() {
         ConnectivityManager cm = (ConnectivityManager) getApplicationContext().getSystemService(
             Context.CONNECTIVITY_SERVICE);
         return cm.getNetworkCapabilities(cm.getActiveNetwork()) != null;
+    }
+
+    private void setUpHourlyWeather(List<HourlyWeather> hourlyWeathers) {
+        recyclerView = findViewById(R.id.weatherByHour);
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this,
+            LinearLayoutManager.HORIZONTAL, false);
+        recyclerView.setLayoutManager(layoutManager);
+
+        RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(
+            hourlyWeathers);
+        recyclerView.setAdapter(rvAdapter);
     }
 
     private void checkLocationPermission() {
@@ -337,12 +358,11 @@ public class MainActivity extends AppCompatActivity {
                 List<Address> addresses = geocoder.getFromLocation(lat, lon,
                     1);
                 tvLocationName.setText(addresses.get(0).getSubAdminArea());
-                // TODO: Bind data to view
-                RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(
-                    hourlyWeathers);
-                recyclerView.setAdapter(rvAdapter);
 
-                // TODO: add data to db
+                String currentTemp = (int) (hourlyWeathers.get(0).getTemperature() - 273.15)
+                    + "°";
+                setUpCurrentTempInfo(currentTemp);
+                setUpHourlyWeather(hourlyWeathers);
             } catch (JSONException | IOException e) {
                 e.printStackTrace();
             }
