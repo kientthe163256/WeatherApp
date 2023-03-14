@@ -33,17 +33,6 @@ public class ApiService {
     private final String dailyWeatherUrl = "https://api.openweathermap.org/data/2.5/forecast/daily";
     private final String geocodingUrl = "http://api.openweathermap.org/geo/1.0/direct";
 
-    private List<HourlyWeather> hourlyWeathers = new ArrayList<>();
-    private List<DailyWeather> dailyWeathers = new ArrayList<>();
-
-    public List<HourlyWeather> getHourlyWeathers() {
-        return hourlyWeathers;
-    }
-
-    public List<DailyWeather> getDailyWeathers() {
-        return dailyWeathers;
-    }
-
     public ApiService(Context context) {
         this.context = context;
         this.db = Room.databaseBuilder(context, AppDatabase.class, "DemoRoom")

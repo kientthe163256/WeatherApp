@@ -28,6 +28,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.android.volley.Response;
 import com.example.weatherapp.adapter.RecyclerViewAdapter;
 import com.example.weatherapp.dao.AppDatabase;
@@ -63,10 +64,6 @@ public class MainActivity extends AppCompatActivity {
 
     private final int REQUEST_CODE = 100;
     private final int REQUEST_CHECK_SETTING = 1001;
-    private final String API_KEY = "35957f6517fce7e6dca5158fc93ba98b";
-    private final String HOURLY_WEATHER_URL = "https://pro.openweathermap.org/data/2.5/forecast/hourly";
-    private final String DAILY_WEATHER_URL = "https://pro.openweathermap.org/data/2.5/forecast/daily";
-    private final String GEOCODING_URL = "http://api.openweathermap.org/geo/1.0/direct";
 
     public static AppLocation appLocation = DefaultConfig.DEFAULT_APP_LOCATION;
 
@@ -98,16 +95,22 @@ public class MainActivity extends AppCompatActivity {
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(
             MainActivity.this);
-        /* Start app -> check permission -> check GPS:
-            if on, get current appLocation, call API/load from db (No internet)
-            if off, request turn on GPS:
-                user turn on -> get current appLocation, call API/load db
-                user not allow -> get default appLocation
-        * */
+
         checkLocationPermission();
+        setUpTimeInfo();
+        SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
+
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            apiService.getHourlyWeather(appLocation.getLatitude(),
+                appLocation.getLongitude(), 24, hourlyListener);
+            apiService.getDailyWeather(appLocation.getLatitude(),
+                appLocation.getLongitude(), 7, dailyListener);
+            swipeRefreshLayout.setRefreshing(false);
+        });
+
     }
 
-    Response.Listener<String> listener = response -> {
+    Response.Listener<String> hourlyListener = response -> {
         try {
             JSONObject jsonResponse = new JSONObject(response);
             JSONArray hourlyDataArray = jsonResponse.getJSONArray("list");
@@ -273,7 +276,7 @@ public class MainActivity extends AppCompatActivity {
                 MainActivity.appLocation = DefaultConfig.DEFAULT_APP_LOCATION;
                 if (hasInternetConnection()) {
                     apiService.getHourlyWeather(appLocation.getLatitude(),
-                        appLocation.getLongitude(), 24, listener);
+                        appLocation.getLongitude(), 24, hourlyListener);
                     apiService.getDailyWeather(appLocation.getLatitude(),
                         appLocation.getLongitude(), 7, dailyListener);
                 }
@@ -295,7 +298,7 @@ public class MainActivity extends AppCompatActivity {
             .addOnSuccessListener(this, this::processReceivedLocation)
             .addOnCompleteListener(task -> {
                 apiService.getHourlyWeather(appLocation.getLatitude(), appLocation.getLongitude(),
-                    24, listener);
+                    24, hourlyListener);
                 apiService.getDailyWeather(appLocation.getLatitude(), appLocation.getLongitude(), 7,
                     dailyListener);
             });
@@ -336,6 +339,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         TableLayout tableLayout = findViewById(R.id.daily_weather);
+        // clear all rows
+        tableLayout.removeAllViews();
         LayoutInflater inflater = getLayoutInflater();
         int maxTemp = getMaxTemp(dailyWeathers);
         int minTemp = getMinTemp(dailyWeathers);
@@ -344,7 +349,7 @@ public class MainActivity extends AppCompatActivity {
             TableRow row = inflater.inflate(R.layout.daily_weather_layout, null, false)
                 .findViewById(R.id.row_day);
             TextView date = row.findViewById(R.id.row_day_day);
-            String dateStr = getDayOfWeek("YYYY/MM/dd", new Date(dailyWeather.getTime()));
+            String dateStr = getDayOfWeek("EEEE", new Date(dailyWeather.getTime()));
             date.setText(dateStr);
             ImageView icon = row.findViewById(R.id.row_day_icon);
             HashMap<String, Integer> iconMap = getIconMap();
