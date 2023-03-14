@@ -116,6 +116,11 @@ public class MainActivity extends AppCompatActivity {
         checkLocationPermission();
         List<DailyWeather> dailyWeathers = mockDailyWeatherList();
         setUpDailyWeather(dailyWeathers);
+        //    Location location = checkLocation();
+        //    List<HourlyWeather> hourlyWeathers = api.getHourlyWeather(location);
+        //    setUpHourlyWeather(hourlyWeathers);
+        //    List<DailyWeather> dailyWeathers = api.getDailyWeather(location);
+        //    setUpDailyWeather(dailyWeathers);
     }
 
     public boolean hasInternetConnection() {
