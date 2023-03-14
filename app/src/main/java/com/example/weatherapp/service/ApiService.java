@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ApiService {
+
     AppDatabase db;
     private Context context;
     private final String apiKey = "35957f6517fce7e6dca5158fc93ba98b";
@@ -32,99 +33,51 @@ public class ApiService {
     private final String dailyWeatherUrl = "https://api.openweathermap.org/data/2.5/forecast/daily";
     private final String geocodingUrl = "http://api.openweathermap.org/geo/1.0/direct";
 
-    public ApiService(Context context) {
-        this.context = context;
-        this.db = Room.databaseBuilder(context, AppDatabase.class, "DemoRoom").allowMainThreadQueries().build();
+    private List<HourlyWeather> hourlyWeathers = new ArrayList<>();
+    private List<DailyWeather> dailyWeathers = new ArrayList<>();
+
+    public List<HourlyWeather> getHourlyWeathers() {
+        return hourlyWeathers;
     }
 
-    public void getHourlyWeather(double latitude, double longitude, int numberOfHours) {
+    public List<DailyWeather> getDailyWeathers() {
+        return dailyWeathers;
+    }
+
+    public ApiService(Context context) {
+        this.context = context;
+        this.db = Room.databaseBuilder(context, AppDatabase.class, "DemoRoom")
+            .allowMainThreadQueries().build();
+    }
+
+    public void getHourlyWeather(double latitude, double longitude, int numberOfHours,
+        Response.Listener<String> responseListener) {
         if (!hasInternetConnection()) {
             Toast.makeText(context, "Please check Internet connection!", Toast.LENGTH_SHORT).show();
             return;
         }
-        String requestUrl = hourlyWeatherUrl + "?lat=" + latitude
-                + "&lon=" + longitude
-                + "&cnt=" + numberOfHours
+        String requestUrl =
+            hourlyWeatherUrl + "?lat=" + latitude + "&lon=" + longitude + "&cnt=" + numberOfHours
                 + "&appid=" + apiKey;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl,
-            response -> {
-                try {
-                    JSONObject jsonResponse = new JSONObject(response);
-                    JSONArray hourlyDataArray = jsonResponse.getJSONArray("list");
-                    List<HourlyWeather> weatherList = new ArrayList<>();
-                    for (int i = 0; i < hourlyDataArray.length(); i++) {
-                        JSONObject hourlyData = hourlyDataArray.getJSONObject(i);
-                        //time in milliseconds to java Date
-                        long time = hourlyData.getLong("dt") * 1000;
-
-                        //get main data
-                        JSONObject main = hourlyData.getJSONObject("main");
-                        double temperature = main.getDouble("temp");
-                        double feelsLike = main.getDouble("feels_like");
-                        int pressure = main.getInt("pressure");
-                        int humidity = main.getInt("humidity");
-
-//                                weatherList.add(new HourlyWeather(time, temperature, feelsLike, pressure, humidity));
-                    }
-                    //TODO: add data to db
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show();
-            }
-        }
-        );
+            responseListener,
+            error -> Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show());
         RequestQueue requestQueue = Volley.newRequestQueue(context);
         requestQueue.add(stringRequest);
     }
 
-    public void getDailyWeather(double latitude, double longitude, int numberOfDays) {
+    public void getDailyWeather(double latitude, double longitude, int numberOfDays,
+        Response.Listener<String> dailyListener) {
         if (!hasInternetConnection()) {
             Toast.makeText(context, "Please check Internet connection!", Toast.LENGTH_SHORT).show();
             return;
         }
-        String requestUrl = dailyWeatherUrl + "?lat=" + latitude
-                + "&lon=" + longitude
-                + "&cnt=" + numberOfDays
+        String requestUrl =
+            dailyWeatherUrl + "?lat=" + latitude + "&lon=" + longitude + "&cnt=" + numberOfDays
                 + "&appid=" + apiKey;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        try {
-                            JSONObject jsonResponse = new JSONObject(response);
-                            JSONArray dailyDataArray = jsonResponse.getJSONArray("list");
-                            List<DailyWeather> weatherList = new ArrayList<>();
-                            for (int i = 0; i < dailyDataArray.length(); i++) {
-                                JSONObject dailyData = dailyDataArray.getJSONObject(i);
-                                //time in milliseconds to java Date
-                                long time = dailyData.getLong("dt") * 1000;
-                                long sunrise = dailyData.getLong("sunrise") * 1000;
-                                long sunset = dailyData.getLong("sunset") * 1000;
-
-                                //get main data
-                                JSONObject temp = dailyData.getJSONObject("temp");
-                                double minTemp = temp.getDouble("min");
-                                double maxTemp = temp.getDouble("max");
-                                //in API response: weather is an array
-                                JSONObject weather = dailyData.getJSONArray("weather").getJSONObject(0);
-                                String mainWeather = weather.getString("main");
-                                String description = weather.getString("description");
-
-                                weatherList.add(new DailyWeather(time, sunrise, sunset, minTemp, maxTemp, mainWeather, description));
-                            }
-                            //TODO: add data to db
-                            System.out.println(weatherList.size());
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, error -> Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show()
-        );
+            dailyListener,
+            error -> Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show());
         RequestQueue requestQueue = Volley.newRequestQueue(context);
         requestQueue.add(stringRequest);
     }
@@ -134,45 +87,42 @@ public class ApiService {
             Toast.makeText(context, "Please check Internet connection!", Toast.LENGTH_SHORT).show();
             return;
         }
-        String requestUrl = geocodingUrl + "?q=" + locationName
-                + "&appid=" + apiKey;
+        String requestUrl = geocodingUrl + "?q=" + locationName + "&appid=" + apiKey;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        try {
-                            JSONArray jsonArray = new JSONArray(response);
-                            List<AppLocation> appLocationList = new ArrayList<>();
-                            for (int i = 0; i < jsonArray.length(); i++) {
-                                JSONObject location = jsonArray.getJSONObject(i);
-                                String name = location.getString("name");
-                                double latitude = location.getDouble("lat");
-                                double longitude = location.getDouble("lon");
-                                String state = location.getString("state");
-                                String country = location.getString("country");
+            response -> {
+                try {
+                    JSONArray jsonArray = new JSONArray(response);
+                    List<AppLocation> appLocationList = new ArrayList<>();
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        JSONObject location = jsonArray.getJSONObject(i);
+                        String name = location.getString("name");
+                        double latitude = location.getDouble("lat");
+                        double longitude = location.getDouble("lon");
+                        String state = location.getString("state");
+                        String country = location.getString("country");
 
-                                appLocationList.add(new AppLocation(name, latitude, longitude, state, country));
-                            }
-                            //TODO: add data to db
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
+                        appLocationList.add(
+                            new AppLocation(name, latitude, longitude, state, country));
                     }
-                }, new Response.ErrorListener() {
+                    // TODO: add data to db
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show();
             }
-        }
-        );
+        });
         RequestQueue requestQueue = Volley.newRequestQueue(context);
         requestQueue.add(stringRequest);
     }
 
 
     private boolean hasInternetConnection() {
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(
+            Context.CONNECTIVITY_SERVICE);
         return cm.getNetworkCapabilities(cm.getActiveNetwork()) != null;
     }
 }

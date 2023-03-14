@@ -10,7 +10,6 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.net.ConnectivityManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
@@ -29,10 +28,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
+import com.android.volley.Response;
 import com.example.weatherapp.adapter.RecyclerViewAdapter;
 import com.example.weatherapp.dao.AppDatabase;
 import com.example.weatherapp.dao.DailyWeatherDao;
@@ -41,6 +37,7 @@ import com.example.weatherapp.dao.LocationDao;
 import com.example.weatherapp.model.AppLocation;
 import com.example.weatherapp.model.DailyWeather;
 import com.example.weatherapp.model.HourlyWeather;
+import com.example.weatherapp.service.ApiService;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -53,8 +50,6 @@ import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.Task;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -73,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
     private final String DAILY_WEATHER_URL = "https://pro.openweathermap.org/data/2.5/forecast/daily";
     private final String GEOCODING_URL = "http://api.openweathermap.org/geo/1.0/direct";
 
-    public static AppLocation appLocation = new AppLocation();
+    public static AppLocation appLocation = DefaultConfig.DEFAULT_APP_LOCATION;
 
     AppDatabase db;
     LocationDao locationDao;
@@ -82,14 +77,14 @@ public class MainActivity extends AppCompatActivity {
     Context context;
     private FusedLocationProviderClient fusedLocationProviderClient;
     public TextView tvLocationName;
-    private RecyclerView recyclerView;
+    private ApiService apiService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
-            "WeatherApp").allowMainThreadQueries().build();
+        db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "WeatherApp")
+            .allowMainThreadQueries().build();
         locationDao = db.locationDao();
         hourlyWeatherDao = db.hourlyWeatherDao();
         dailyWeatherDao = db.dailyWeatherDao();
@@ -97,13 +92,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         context = getApplicationContext();
-        // Recycler view weather by hour
-        recyclerView = findViewById(R.id.weatherByHour);
 
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this,
-            LinearLayoutManager.HORIZONTAL, false);
-        recyclerView.setLayoutManager(layoutManager);
-
+        apiService = new ApiService(context);
         tvLocationName = findViewById(R.id.location);
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(
@@ -115,10 +105,71 @@ public class MainActivity extends AppCompatActivity {
                 user not allow -> get default appLocation
         * */
         checkLocationPermission();
-        List<DailyWeather> dailyWeathers = mockDailyWeatherList();
-        setUpDailyWeather(dailyWeathers);
-        setUpTimeInfo();
     }
+
+    Response.Listener<String> listener = response -> {
+        try {
+            JSONObject jsonResponse = new JSONObject(response);
+            JSONArray hourlyDataArray = jsonResponse.getJSONArray("list");
+            List<HourlyWeather> hourlyWeathers = new ArrayList<>();
+            for (int i = 0; i < hourlyDataArray.length(); i++) {
+                JSONObject hourlyData = hourlyDataArray.getJSONObject(i);
+                // time in milliseconds to java Date
+                long time = hourlyData.getLong("dt") * 1000;
+
+                // get main data
+                JSONObject main = hourlyData.getJSONObject("main");
+                double temperature = main.getDouble("temp");
+                double feelsLike = main.getDouble("feels_like");
+                int pressure = main.getInt("pressure");
+                int humidity = main.getInt("humidity");
+
+                JSONObject weather = hourlyData.getJSONArray("weather").getJSONObject(0);
+                String mainWeather = weather.getString("main");
+                String description = weather.getString("description");
+
+                hourlyWeathers.add(
+                    new HourlyWeather(time, temperature, feelsLike, pressure, humidity, mainWeather,
+                        description));
+                setUpHourlyWeather(hourlyWeathers);
+            }
+
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    };
+
+    Response.Listener<String> dailyListener = response -> {
+        try {
+            JSONObject jsonResponse = new JSONObject(response);
+            JSONArray dailyDataArray = jsonResponse.getJSONArray("list");
+            List<DailyWeather> dailyWeathers = new ArrayList<>();
+            for (int i = 0; i < dailyDataArray.length(); i++) {
+                JSONObject dailyData = dailyDataArray.getJSONObject(i);
+                // time in milliseconds to java Date
+                long time = dailyData.getLong("dt") * 1000;
+                long sunrise = dailyData.getLong("sunrise") * 1000;
+                long sunset = dailyData.getLong("sunset") * 1000;
+
+                // get main data
+                JSONObject temp = dailyData.getJSONObject("temp");
+                double minTemp = temp.getDouble("min");
+                double maxTemp = temp.getDouble("max");
+                // in API response: weather is an array
+                JSONObject weather = dailyData.getJSONArray("weather").getJSONObject(0);
+                String mainWeather = weather.getString("main");
+                String description = weather.getString("description");
+
+                dailyWeathers.add(
+                    new DailyWeather(time, sunrise, sunset, minTemp, maxTemp, mainWeather,
+                        description));
+            }
+            setUpDailyWeather(dailyWeathers);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    };
 
     private void setUpTimeInfo() {
         TextView tvTime = findViewById(R.id.date_time);
@@ -139,20 +190,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setUpHourlyWeather(List<HourlyWeather> hourlyWeathers) {
-        recyclerView = findViewById(R.id.weatherByHour);
+        RecyclerView recyclerView = findViewById(R.id.weatherByHour);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this,
             LinearLayoutManager.HORIZONTAL, false);
         recyclerView.setLayoutManager(layoutManager);
 
-        RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(
-            hourlyWeathers);
+        RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(hourlyWeathers);
         recyclerView.setAdapter(rvAdapter);
     }
 
     private void checkLocationPermission() {
-        if (ContextCompat.checkSelfPermission(this,
-            Manifest.permission.ACCESS_FINE_LOCATION)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED) {
             // permission is granted
             checkGPS();
@@ -164,15 +213,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void requestPermission() {
         ActivityCompat.requestPermissions(MainActivity.this,
-            new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-            REQUEST_CODE);
+            new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_CODE);
     }
 
     private void checkGPS() {
         long timeInterval = 1000;
         LocationRequest locationRequest = new LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            timeInterval).setWaitForAccurateLocation(true).build();
+            Priority.PRIORITY_HIGH_ACCURACY, timeInterval).setWaitForAccurateLocation(true).build();
 
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(
             locationRequest).setAlwaysShow(true);
@@ -180,51 +227,44 @@ public class MainActivity extends AppCompatActivity {
         Task<LocationSettingsResponse> result = LocationServices.getSettingsClient(
             getApplicationContext()).checkLocationSettings(builder.build());
 
-        result.addOnCompleteListener(
-            task -> {
-                try {
-                    // when GPS is already on
-                    task.getResult(ApiException.class);
-                    getCurrentLocation();
-                    new HourlyTask().execute(appLocation.getLatitude(),
-                        appLocation.getLongitude(), 24.0);
-                } catch (ApiException e) {
-                    if (e.getStatusCode()
-                        == LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
-                        try {
-                            // try to ask user turn on GPS
-                            ResolvableApiException resolvableApiException = (ResolvableApiException) e;
-                            resolvableApiException.startResolutionForResult(
-                                MainActivity.this,
-                                REQUEST_CHECK_SETTING);
-                        } catch (SendIntentException ex) {
-                            ex.printStackTrace();
-                        }
+        getCurrentLocation();
+
+        result.addOnCompleteListener(task -> {
+            try {
+                // when GPS is already on
+                task.getResult(ApiException.class);
+            } catch (ApiException e) {
+                if (e.getStatusCode() == LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
+                    try {
+                        // try to ask user turn on GPS
+                        ResolvableApiException resolvableApiException = (ResolvableApiException) e;
+                        resolvableApiException.startResolutionForResult(MainActivity.this,
+                            REQUEST_CHECK_SETTING);
+                    } catch (SendIntentException ex) {
+                        ex.printStackTrace();
                     }
                 }
-            });
+            }
+        });
     }
 
     // check after request appLocation permission
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-        @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+        @NonNull int[] grantResults) {
         if (requestCode == REQUEST_CODE) {
-            if (grantResults.length > 0
-                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             } else {
-                Toast.makeText(this, "LOCATION PERMISSION MUST BE GRANTED",
-                    Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "LOCATION PERMISSION MUST BE GRANTED", Toast.LENGTH_LONG)
+                    .show();
             }
         }
-        super.onRequestPermissionsResult(requestCode, permissions,
-            grantResults);
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     // check after request turn on GPS
     @Override
-    protected void onActivityResult(int requestCode, int resultCode,
-        @Nullable Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (requestCode == REQUEST_CHECK_SETTING) {
             if (resultCode == Activity.RESULT_OK) {
                 getCurrentLocation();
@@ -232,8 +272,10 @@ public class MainActivity extends AppCompatActivity {
                 // user don't turn on GPS, set appLocation to default appLocation
                 MainActivity.appLocation = DefaultConfig.DEFAULT_APP_LOCATION;
                 if (hasInternetConnection()) {
-                    new HourlyTask().execute(appLocation.getLatitude(),
-                        appLocation.getLongitude(), 24.0);
+                    apiService.getHourlyWeather(appLocation.getLatitude(),
+                        appLocation.getLongitude(), 24, listener);
+                    apiService.getDailyWeather(appLocation.getLatitude(),
+                        appLocation.getLongitude(), 7, dailyListener);
                 }
             }
         }
@@ -242,42 +284,36 @@ public class MainActivity extends AppCompatActivity {
 
     private void getCurrentLocation() {
         // the entire comparison is here because the editor will throw a warning otherwise
-        if (ActivityCompat.checkSelfPermission(this,
-            Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED &&
-            ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "Please grant location permissions",
-                Toast.LENGTH_SHORT).show();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+            && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "Please grant location permissions", Toast.LENGTH_SHORT).show();
             return;
         }
         fusedLocationProviderClient.getLastLocation()
             .addOnSuccessListener(this, this::processReceivedLocation)
-            .addOnCompleteListener(task -> new HourlyTask().execute(
-                MainActivity.appLocation.getLatitude(),
-                MainActivity.appLocation.getLongitude(), 24.0));
+            .addOnCompleteListener(task -> {
+                apiService.getHourlyWeather(appLocation.getLatitude(), appLocation.getLongitude(),
+                    24, listener);
+                apiService.getDailyWeather(appLocation.getLatitude(), appLocation.getLongitude(), 7,
+                    dailyListener);
+            });
     }
 
 
     private void processReceivedLocation(Location location) {
         if (location != null) {
-            Geocoder geocoder = new Geocoder(MainActivity.this,
-                Locale.getDefault());
+            Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
             try {
-                List<Address> addresses = geocoder.getFromLocation(
-                    location.getLatitude(), location.getLongitude(), 1);
+                List<Address> addresses = geocoder.getFromLocation(location.getLatitude(),
+                    location.getLongitude(), 1);
                 Address address = addresses.get(0);
-                MainActivity.appLocation.setLatitude(
-                    address.getLatitude());
-                MainActivity.appLocation.setLongitude(
-                    location.getLongitude());
-                MainActivity.appLocation.setName(
-                    address.getSubAdminArea());
-                MainActivity.appLocation.setState(
-                    address.getAdminArea());
-                MainActivity.appLocation.setCountry(
-                    address.getCountryName());
+                MainActivity.appLocation.setLatitude(address.getLatitude());
+                MainActivity.appLocation.setLongitude(location.getLongitude());
+                MainActivity.appLocation.setName(address.getSubAdminArea());
+                MainActivity.appLocation.setState(address.getAdminArea());
+                MainActivity.appLocation.setCountry(address.getCountryName());
                 tvLocationName.setText(address.getSubAdminArea());
 
                 insertLocation(MainActivity.appLocation);
@@ -287,130 +323,28 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void insertLocation(
-        @NonNull AppLocation appLocation) {
+    private void insertLocation(@NonNull AppLocation appLocation) {
         locationDao.insert(appLocation);
     }
 
-    private class HourlyTask extends AsyncTask<Double, Integer, Integer> {
-
-        @Override
-        protected Integer doInBackground(Double... doubles) {
-            int cnt = doubles[2].intValue();
-            String requestUrl =
-                HOURLY_WEATHER_URL + "?lat=" + doubles[0] + "&lon=" + doubles[1]
-                    + "&cnt=" + cnt + "&appid=" + API_KEY;
-
-            long idLocation = locationDao.getIdLocationBylatitudeAndlongitude(
-                appLocation.getLatitude(),
-                appLocation.getLongitude());
-            List<HourlyWeather> hourlyWeathers = new ArrayList<>();
-
-            StringRequest stringRequest = new StringRequest(Request.Method.GET,
-                requestUrl, response -> processHourlyWeatherResponse(idLocation,
-                hourlyWeathers, response),
-                error -> Toast.makeText(context, error.toString(),
-                    Toast.LENGTH_SHORT).show());
-            RequestQueue requestQueue = Volley.newRequestQueue(context);
-            requestQueue.add(stringRequest);
-
-            deleteHourlyWeatherByLocationId(
-                Integer.parseInt(String.valueOf(idLocation)));
-            insertHourlyWeather(hourlyWeathers);
-            return 1;
-        }
-
-        private void processHourlyWeatherResponse(long idLocation,
-            List<HourlyWeather> hourlyWeathers, String response) {
-            try {
-                JSONObject jsonResponse = new JSONObject(response);
-                JSONArray hourlyDataArray = jsonResponse.getJSONArray(
-                    "list");
-                for (int i = 0; i < hourlyDataArray.length(); i++) {
-                    JSONObject hourlyData = hourlyDataArray.getJSONObject(
-                        i);
-                    // time in milliseconds to java Date
-                    long time = hourlyData.getLong("dt") * 1000;
-
-                    // get main data
-                    JSONObject main = hourlyData.getJSONObject("main");
-                    double temperature = main.getDouble("temp");
-                    double feelsLike = main.getDouble("feels_like");
-                    int pressure = main.getInt("pressure");
-                    int humidity = main.getInt("humidity");
-
-                    JSONObject weather = hourlyData.getJSONArray("weather")
-                        .getJSONObject(0);
-                    String mainWeather = weather.getString("main");
-                    String description = weather.getString("description");
-
-                    hourlyWeathers.add(
-                        new HourlyWeather(time, temperature, feelsLike,
-                            pressure, humidity, mainWeather, description,
-                            idLocation));
-                }
-                JSONObject city = jsonResponse.getJSONObject("city");
-                JSONObject coord = city.getJSONObject("coord");
-                double lat = coord.getDouble("lat");
-                double lon = coord.getDouble("lon");
-                Geocoder geocoder = new Geocoder(MainActivity.this,
-                    Locale.getDefault());
-                List<Address> addresses = geocoder.getFromLocation(lat, lon,
-                    1);
-                tvLocationName.setText(addresses.get(0).getSubAdminArea());
-
-                String currentTemp = (int) (hourlyWeathers.get(0).getTemperature() - 273.15)
-                    + "°";
-                setUpCurrentTempInfo(currentTemp);
-                setUpHourlyWeather(hourlyWeathers);
-            } catch (JSONException | IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        private void insertHourlyWeather(List<HourlyWeather> weatherList) {
-            hourlyWeatherDao.insert(weatherList);
-        }
-
-        private void deleteHourlyWeatherByLocationId(int locationId) {
-            hourlyWeatherDao.deleteByLocationId(locationId);
-        }
-    }
-
-    private List<DailyWeather> mockDailyWeatherList() {
-        List<DailyWeather> weatherList = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            DailyWeather weather = new DailyWeather();
-            weather.setTime(Instant.now().plus(i, ChronoUnit.DAYS).toEpochMilli());
-            weather.setLastUpdate(Instant.now().toEpochMilli());
-            weather.setMinTemp(getRandomNumber(15, 20));
-            weather.setMaxTemp(weather.getMinTemp() + getRandomNumber(3, 8));
-            if (getRandomNumber(0, 3) != 0) {
-                weather.setWeather("Sunny");
-            } else {
-                weather.setWeather("Cloudy");
-            }
-            weatherList.add(weather);
-        }
-        return weatherList;
-    }
-
-    private int getRandomNumber(int min, int max) {
-        return (int) ((Math.random() * (max - min)) + min);
-    }
-
     private void setUpDailyWeather(List<DailyWeather> dailyWeathers) {
+        double KELVIN_DELTA = 273.15;
+
+        dailyWeathers.forEach(dailyWeather -> {
+            dailyWeather.setMinTemp(dailyWeather.getMinTemp() - KELVIN_DELTA);
+            dailyWeather.setMaxTemp(dailyWeather.getMaxTemp() - KELVIN_DELTA);
+        });
+
         TableLayout tableLayout = findViewById(R.id.daily_weather);
         LayoutInflater inflater = getLayoutInflater();
         int maxTemp = getMaxTemp(dailyWeathers);
         int minTemp = getMinTemp(dailyWeathers);
         int maxTempDiff = maxTemp - minTemp;
         for (DailyWeather dailyWeather : dailyWeathers) {
-            TableRow row = inflater.inflate(R.layout.daily_weather_layout, null,
-                    false)
+            TableRow row = inflater.inflate(R.layout.daily_weather_layout, null, false)
                 .findViewById(R.id.row_day);
             TextView date = row.findViewById(R.id.row_day_day);
-            String dateStr = getDayOfWeek("EEEE", new Date(dailyWeather.getTime()));
+            String dateStr = getDayOfWeek("YYYY/MM/dd", new Date(dailyWeather.getTime()));
             date.setText(dateStr);
             ImageView icon = row.findViewById(R.id.row_day_icon);
             HashMap<String, Integer> iconMap = getIconMap();
@@ -424,8 +358,8 @@ public class MainActivity extends AppCompatActivity {
             params.leftMargin = dpToPx(
                 (int) ((dailyWeather.getMinTemp() - minTemp) / maxTempDiff * 100));
             int width = dpToPx(
-                (int) ((dailyWeather.getMaxTemp() - dailyWeather.getMinTemp())
-                    / maxTempDiff * 100));
+                (int) ((dailyWeather.getMaxTemp() - dailyWeather.getMinTemp()) / maxTempDiff
+                    * 100));
             params.width = dpToPx(width);
             tempDiff.setLayoutParams(params);
 
@@ -444,15 +378,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private int getMaxTemp(List<DailyWeather> dailyWeathers) {
-        return dailyWeathers.stream().map(
-                dailyWeather -> (int) dailyWeather.getMaxTemp()).max(Integer::compareTo)
-            .orElse(0);
+        return dailyWeathers.stream().map(dailyWeather -> (int) dailyWeather.getMaxTemp())
+            .max(Integer::compareTo).orElse(0);
     }
 
     private int getMinTemp(List<DailyWeather> dailyWeathers) {
-        return dailyWeathers.stream().map(
-                dailyWeather -> (int) dailyWeather.getMinTemp()).min(Integer::compareTo)
-            .orElse(0);
+        return dailyWeathers.stream().map(dailyWeather -> (int) dailyWeather.getMinTemp())
+            .min(Integer::compareTo).orElse(0);
     }
 
     private HashMap<String, Integer> getIconMap() {
@@ -463,8 +395,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String getDayOfWeek(String format, Date date) {
-        return new SimpleDateFormat(format, Locale.ENGLISH).format(
-            date);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format, Locale.ENGLISH);
+        simpleDateFormat.setLenient(false);
+        return simpleDateFormat.format(date);
     }
 
     private String currentHourAndMinute() {
