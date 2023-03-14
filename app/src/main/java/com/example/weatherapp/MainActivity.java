@@ -105,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
                 appLocation.getLongitude(), 24, hourlyListener);
             apiService.getDailyWeather(appLocation.getLatitude(),
                 appLocation.getLongitude(), 7, dailyListener);
+            setUpTimeInfo();
             swipeRefreshLayout.setRefreshing(false);
         });
 
