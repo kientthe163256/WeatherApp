@@ -16,7 +16,7 @@ public abstract class LocationDao {
     public abstract List<AppLocation> getAllLocations();
 
     @Query("SELECT id from AppLocation where latitude = :latitude and longitude = :longitude")
-    public abstract long getIdLocationBylatitudeAndlongitude(double latitude,double longitude);
+    public abstract long getLocationIdByLatitudeAndLongitude(double latitude, double longitude);
 
     @Insert
     public abstract void insert(AppLocation appLocation);
@@ -27,4 +27,6 @@ public abstract class LocationDao {
     @Delete
     public abstract void delete(AppLocation appLocation);
 
+    @Query("SELECT * from AppLocation where id = :locationId")
+    public abstract AppLocation getLocationById(long locationId);
 }

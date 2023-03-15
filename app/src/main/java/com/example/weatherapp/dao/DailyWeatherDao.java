@@ -12,9 +12,12 @@ import java.util.List;
 
 @Dao
 public interface DailyWeatherDao {
-    @Query("SELECT * from DailyWeather where location_id = :locationId and time between :fromTime and :toTime")
-    List<DailyWeather> getByLocationId(int locationId, long fromTime, long toTime);
+    @Query("SELECT * from DailyWeather where location_id = :locationId")
+    List<DailyWeather> getByLocationId(long locationId);
 
     @Insert
     void insert(List<DailyWeather> weatherList);
+
+    @Query("DELETE from DailyWeather where location_id = :locationId")
+    void deleteByLocationId(long locationId);
 }

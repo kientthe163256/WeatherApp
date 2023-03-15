@@ -25,6 +25,15 @@ public class AppLocation {
         this.country = country;
     }
 
+    public AppLocation(long id, String name, double latitude, double longitude, String state, String country) {
+        this.id = id;
+        this.name = name;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.state = state;
+        this.country = country;
+    }
+
     public long getId() {
         return id;
     }
