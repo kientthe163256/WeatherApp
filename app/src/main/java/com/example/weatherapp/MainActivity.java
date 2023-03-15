@@ -9,7 +9,6 @@ import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
-import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -369,6 +368,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         TableLayout tableLayout = findViewById(R.id.daily_weather);
+        // clear all rows
+        tableLayout.removeAllViews();
         LayoutInflater inflater = getLayoutInflater();
         int maxTemp = getMaxTemp(dailyWeathers);
         int minTemp = getMinTemp(dailyWeathers);
