@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -81,33 +82,35 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "WeatherApp")
-            .allowMainThreadQueries().build();
+                .fallbackToDestructiveMigration()
+                .allowMainThreadQueries().build();
         locationDao = db.locationDao();
         hourlyWeatherDao = db.hourlyWeatherDao();
         dailyWeatherDao = db.dailyWeatherDao();
+        initializeCurrentLocationInDb();
+        context = getApplicationContext();
+        apiService = new ApiService(context);
 
         setContentView(R.layout.activity_main);
-
-        context = getApplicationContext();
-
-        apiService = new ApiService(context);
-        tvLocationName = findViewById(R.id.location);
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(
             MainActivity.this);
 
-        checkLocationPermission();
+        tvLocationName = findViewById(R.id.location);
+
+        if (!hasInternetConnection()){
+            getDefaultLocationWeather();
+        } else {
+            checkLocationPermission();
+        }
+
         setUpTimeInfo();
         SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
 
         swipeRefreshLayout.setOnRefreshListener(() -> {
-            apiService.getHourlyWeather(appLocation.getLatitude(),
-                appLocation.getLongitude(), 24, hourlyListener);
-            apiService.getDailyWeather(appLocation.getLatitude(),
-                appLocation.getLongitude(), 7, dailyListener);
+            getWeatherData();
             swipeRefreshLayout.setRefreshing(false);
         });
-
     }
 
     Response.Listener<String> hourlyListener = response -> {
@@ -133,11 +136,12 @@ public class MainActivity extends AppCompatActivity {
 
                 hourlyWeathers.add(
                     new HourlyWeather(time, temperature, feelsLike, pressure, humidity, mainWeather,
-                        description));
-                setUpHourlyWeather(hourlyWeathers);
+                        description, appLocation.getId()));
             }
+            hourlyWeatherDao.deleteByLocationId(appLocation.getId());
+            hourlyWeatherDao.insert(hourlyWeathers);
 
-
+            setUpHourlyWeather(hourlyWeathers);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -166,8 +170,11 @@ public class MainActivity extends AppCompatActivity {
 
                 dailyWeathers.add(
                     new DailyWeather(time, sunrise, sunset, minTemp, maxTemp, mainWeather,
-                        description));
+                        description, appLocation.getId()));
             }
+            dailyWeatherDao.deleteByLocationId(appLocation.getId());
+            dailyWeatherDao.insert(dailyWeathers);
+
             setUpDailyWeather(dailyWeathers);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -216,33 +223,33 @@ public class MainActivity extends AppCompatActivity {
 
     private void requestPermission() {
         ActivityCompat.requestPermissions(MainActivity.this,
-            new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_CODE);
+                new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_CODE);
     }
 
     private void checkGPS() {
         long timeInterval = 1000;
         LocationRequest locationRequest = new LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY, timeInterval).setWaitForAccurateLocation(true).build();
+                Priority.PRIORITY_HIGH_ACCURACY, timeInterval).setWaitForAccurateLocation(true).build();
 
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(
-            locationRequest).setAlwaysShow(true);
+                locationRequest).setAlwaysShow(true);
 
         Task<LocationSettingsResponse> result = LocationServices.getSettingsClient(
-            getApplicationContext()).checkLocationSettings(builder.build());
+                getApplicationContext()).checkLocationSettings(builder.build());
 
-        getCurrentLocation();
 
         result.addOnCompleteListener(task -> {
             try {
                 // when GPS is already on
                 task.getResult(ApiException.class);
+                getCurrentLocation();
             } catch (ApiException e) {
                 if (e.getStatusCode() == LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
                     try {
                         // try to ask user turn on GPS
                         ResolvableApiException resolvableApiException = (ResolvableApiException) e;
                         resolvableApiException.startResolutionForResult(MainActivity.this,
-                            REQUEST_CHECK_SETTING);
+                                REQUEST_CHECK_SETTING);
                     } catch (SendIntentException ex) {
                         ex.printStackTrace();
                     }
@@ -254,12 +261,12 @@ public class MainActivity extends AppCompatActivity {
     // check after request appLocation permission
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-        @NonNull int[] grantResults) {
+                                           @NonNull int[] grantResults) {
         if (requestCode == REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             } else {
                 Toast.makeText(this, "LOCATION PERMISSION MUST BE GRANTED", Toast.LENGTH_LONG)
-                    .show();
+                        .show();
             }
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -274,12 +281,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 // user don't turn on GPS, set appLocation to default appLocation
                 MainActivity.appLocation = DefaultConfig.DEFAULT_APP_LOCATION;
-                if (hasInternetConnection()) {
-                    apiService.getHourlyWeather(appLocation.getLatitude(),
-                        appLocation.getLongitude(), 24, hourlyListener);
-                    apiService.getDailyWeather(appLocation.getLatitude(),
-                        appLocation.getLongitude(), 7, dailyListener);
-                }
+                getWeatherData();
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
@@ -288,20 +290,14 @@ public class MainActivity extends AppCompatActivity {
     private void getCurrentLocation() {
         // the entire comparison is here because the editor will throw a warning otherwise
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED
-            && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) {
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(this, "Please grant location permissions", Toast.LENGTH_SHORT).show();
             return;
         }
-        fusedLocationProviderClient.getLastLocation()
-            .addOnSuccessListener(this, this::processReceivedLocation)
-            .addOnCompleteListener(task -> {
-                apiService.getHourlyWeather(appLocation.getLatitude(), appLocation.getLongitude(),
-                    24, hourlyListener);
-                apiService.getDailyWeather(appLocation.getLatitude(), appLocation.getLongitude(), 7,
-                    dailyListener);
-            });
+        fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_LOW_POWER, null)
+            .addOnSuccessListener(this, this::processReceivedLocation);
     }
 
 
@@ -312,22 +308,56 @@ public class MainActivity extends AppCompatActivity {
                 List<Address> addresses = geocoder.getFromLocation(location.getLatitude(),
                     location.getLongitude(), 1);
                 Address address = addresses.get(0);
+                MainActivity.appLocation.setId(DefaultConfig.CURRENT_LOCATION_ID);
                 MainActivity.appLocation.setLatitude(address.getLatitude());
                 MainActivity.appLocation.setLongitude(location.getLongitude());
                 MainActivity.appLocation.setName(address.getSubAdminArea());
                 MainActivity.appLocation.setState(address.getAdminArea());
                 MainActivity.appLocation.setCountry(address.getCountryName());
-                tvLocationName.setText(address.getSubAdminArea());
 
-                insertLocation(MainActivity.appLocation);
+                AppLocation currentLocation = locationDao.getLocationById(DefaultConfig.CURRENT_LOCATION_ID);
+                currentLocation.setLatitude(address.getLatitude());
+                currentLocation.setLongitude(location.getLongitude());
+                currentLocation.setName(address.getSubAdminArea());
+                currentLocation.setState(address.getAdminArea());
+                currentLocation.setCountry(address.getCountryName());
+                locationDao.update(currentLocation);
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            getWeatherData();
         }
     }
 
-    private void insertLocation(@NonNull AppLocation appLocation) {
-        locationDao.insert(appLocation);
+    private void getWeatherData(){
+        if (hasInternetConnection()) {
+            //has Internet, call API
+            apiService.getHourlyWeather(appLocation.getLatitude(), appLocation.getLongitude(), hourlyListener);
+            apiService.getDailyWeather(appLocation.getLatitude(), appLocation.getLongitude(), dailyListener);
+        } else {
+            //no Internet, get data from db
+            Toast.makeText(MainActivity.this, "No Internet", Toast.LENGTH_SHORT).show();
+            getDefaultLocationWeather();
+        }
+        tvLocationName.setText(appLocation.getName());
+    }
+
+    private void getDefaultLocationWeather(){
+        List<HourlyWeather> hourlyWeathers = hourlyWeatherDao.getByLocationId(appLocation.getId());
+        List<DailyWeather> dailyWeathers = dailyWeatherDao.getByLocationId(appLocation.getId());
+
+        tvLocationName.setText(appLocation.getName());
+        setUpHourlyWeather(hourlyWeathers);
+        setUpDailyWeather(dailyWeathers);
+    }
+
+    private void initializeCurrentLocationInDb(){
+        if (locationDao.getLocationById(DefaultConfig.CURRENT_LOCATION_ID) == null){
+            AppLocation appLocation = DefaultConfig.DEFAULT_APP_LOCATION;
+            appLocation.setId(DefaultConfig.CURRENT_LOCATION_ID);
+            locationDao.insert(appLocation);
+        }
     }
 
     private void setUpDailyWeather(List<DailyWeather> dailyWeathers) {
@@ -339,8 +369,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         TableLayout tableLayout = findViewById(R.id.daily_weather);
-        // clear all rows
-        tableLayout.removeAllViews();
         LayoutInflater inflater = getLayoutInflater();
         int maxTemp = getMaxTemp(dailyWeathers);
         int minTemp = getMinTemp(dailyWeathers);

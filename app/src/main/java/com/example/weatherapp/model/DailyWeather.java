@@ -42,7 +42,7 @@ public class DailyWeather {
         lastUpdate = now.getTime();
     }
 
-    public DailyWeather(long time, long sunrise, long sunset, double minTemp, double maxTemp, String weather, String description) {
+    public DailyWeather(long time, long sunrise, long sunset, double minTemp, double maxTemp, String weather, String description, long locationId) {
         this.time = time;
         this.sunrise = sunrise;
         this.sunset = sunset;
@@ -50,6 +50,7 @@ public class DailyWeather {
         this.maxTemp = maxTemp;
         this.weather = weather;
         this.description = description;
+        this.locationId = locationId;
         Date now = new Date();
         lastUpdate = now.getTime();
     }

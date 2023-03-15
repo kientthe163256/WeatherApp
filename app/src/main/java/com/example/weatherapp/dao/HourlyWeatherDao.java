@@ -10,18 +10,18 @@ import java.util.List;
 
 @Dao
 public interface HourlyWeatherDao {
-    @Query("SELECT * from HourlyWeather where location_id = :locationId and time between :fromTime and :toTime")
-    List<HourlyWeather> getByLocationId(int locationId, long fromTime, long toTime);
+    @Query("SELECT * from HourlyWeather where location_id = :locationId")
+    List<HourlyWeather> getByLocationId(long locationId);
 
     @Insert
     void insert(List<HourlyWeather> weatherList);
 
     @Query("DELETE from HourlyWeather where location_id = :locationId")
-     void deleteByLocationId(int locationId);
+     void deleteByLocationId(long locationId);
 
     //    Test HourlyWeather DB
     @Query("SELECT * from HourlyWeather where location_id = :locationId")
-    List<HourlyWeather> getByLocationIdTest(int locationId);
+    List<HourlyWeather> getByLocationIdTest(long locationId);
 
     @Query("Select * from HourlyWeather")
     List<HourlyWeather> getAllLocations();

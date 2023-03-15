@@ -1,5 +1,8 @@
 package com.example.weatherapp.service;
 
+import static com.example.weatherapp.DefaultConfig.NUMBER_OF_DAYS;
+import static com.example.weatherapp.DefaultConfig.NUMBER_OF_HOURS;
+
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.widget.Toast;
@@ -12,6 +15,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.weatherapp.DefaultConfig;
 import com.example.weatherapp.dao.AppDatabase;
 import com.example.weatherapp.model.DailyWeather;
 import com.example.weatherapp.model.HourlyWeather;
@@ -25,8 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ApiService {
-
-    AppDatabase db;
     private Context context;
     private final String apiKey = "35957f6517fce7e6dca5158fc93ba98b";
     private final String hourlyWeatherUrl = "https://pro.openweathermap.org/data/2.5/forecast/hourly";
@@ -35,18 +37,12 @@ public class ApiService {
 
     public ApiService(Context context) {
         this.context = context;
-        this.db = Room.databaseBuilder(context, AppDatabase.class, "DemoRoom")
-            .allowMainThreadQueries().build();
     }
 
-    public void getHourlyWeather(double latitude, double longitude, int numberOfHours,
+    public void getHourlyWeather(double latitude, double longitude,
         Response.Listener<String> responseListener) {
-        if (!hasInternetConnection()) {
-            Toast.makeText(context, "Please check Internet connection!", Toast.LENGTH_SHORT).show();
-            return;
-        }
         String requestUrl =
-            hourlyWeatherUrl + "?lat=" + latitude + "&lon=" + longitude + "&cnt=" + numberOfHours
+            hourlyWeatherUrl + "?lat=" + latitude + "&lon=" + longitude + "&cnt=" + NUMBER_OF_HOURS
                 + "&appid=" + apiKey;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl,
             responseListener,
@@ -55,14 +51,10 @@ public class ApiService {
         requestQueue.add(stringRequest);
     }
 
-    public void getDailyWeather(double latitude, double longitude, int numberOfDays,
+    public void getDailyWeather(double latitude, double longitude,
         Response.Listener<String> dailyListener) {
-        if (!hasInternetConnection()) {
-            Toast.makeText(context, "Please check Internet connection!", Toast.LENGTH_SHORT).show();
-            return;
-        }
         String requestUrl =
-            dailyWeatherUrl + "?lat=" + latitude + "&lon=" + longitude + "&cnt=" + numberOfDays
+            dailyWeatherUrl + "?lat=" + latitude + "&lon=" + longitude + "&cnt=" + NUMBER_OF_DAYS
                 + "&appid=" + apiKey;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl,
             dailyListener,
