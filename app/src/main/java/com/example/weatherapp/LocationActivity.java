@@ -33,12 +33,8 @@ public class LocationActivity extends AppCompatActivity {
         }
         textView.setText(text);
 
-        findViewById(R.id.btnDelete).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                locationDao.delete(appLocationList.get(0));
-            }
-        });
+        findViewById(R.id.btnDelete).setOnClickListener(
+            v -> locationDao.delete(appLocationList.get(0)));
     }
 
 }

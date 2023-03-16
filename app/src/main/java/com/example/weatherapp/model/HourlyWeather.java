@@ -5,13 +5,17 @@ import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.PrimaryKey;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-@Entity(foreignKeys = {@ForeignKey(entity = AppLocation.class,
-        parentColumns = "id",
-        childColumns = "location_id",
-        onDelete = ForeignKey.CASCADE)})
+@Entity(foreignKeys = {
+    @ForeignKey(entity = AppLocation.class, parentColumns = "id", childColumns = "location_id", onDelete = ForeignKey.CASCADE)})
 public class HourlyWeather {
+
     @PrimaryKey(autoGenerate = true)
     private long id;
 
@@ -41,7 +45,8 @@ public class HourlyWeather {
         this.lastUpdate = now.getTime();
     }
 
-    public HourlyWeather(long time, double temperature, double feelsLike, int pressure, int humidity, String weather, String description) {
+    public HourlyWeather(long time, double temperature, double feelsLike, int pressure,
+        int humidity, String weather, String description) {
         this.time = time;
         this.temperature = temperature;
         this.feelsLike = feelsLike;
@@ -53,7 +58,8 @@ public class HourlyWeather {
         this.lastUpdate = now.getTime();
     }
 
-    public HourlyWeather(long time, double temperature, double feelsLike, int pressure, int humidity, String weather, String description,long locationId) {
+    public HourlyWeather(long time, double temperature, double feelsLike, int pressure,
+        int humidity, String weather, String description, long locationId) {
         this.time = time;
         this.temperature = temperature;
         this.feelsLike = feelsLike;
@@ -148,17 +154,40 @@ public class HourlyWeather {
 
     @Override
     public String toString() {
-        return "HourlyWeather{" +
-                "id=" + id +
-                ", time=" + time +
-                ", temperature=" + temperature +
-                ", feelsLike=" + feelsLike +
-                ", pressure=" + pressure +
-                ", humidity=" + humidity +
-                ", weather='" + weather + '\'' +
-                ", description='" + description + '\'' +
-                ", lastUpdate=" + lastUpdate +
-                ", locationId=" + locationId +
-                '}';
+        return "HourlyWeather{" + "id=" + id + ", time=" + time + ", temperature=" + temperature
+            + ", feelsLike=" + feelsLike + ", pressure=" + pressure + ", humidity=" + humidity
+            + ", weather='" + weather + '\'' + ", description='" + description + '\''
+            + ", lastUpdate=" + lastUpdate + ", locationId=" + locationId + '}';
+    }
+
+    public static HourlyWeather fromJson(JSONObject hourlyData) throws JSONException {
+        // time in milliseconds to java Date
+        long time = hourlyData.getLong("dt") * 1000;
+
+        // get main data
+        JSONObject main = hourlyData.getJSONObject("main");
+        double temperature = main.getDouble("temp");
+        double feelsLike = main.getDouble("feels_like");
+        int pressure = main.getInt("pressure");
+        int humidity = main.getInt("humidity");
+
+        JSONObject weather = hourlyData.getJSONArray("weather").getJSONObject(0);
+        String mainWeather = weather.getString("main");
+        String description = weather.getString("description");
+
+        return new HourlyWeather(time, temperature, feelsLike, pressure, humidity, mainWeather,
+            description);
+    }
+
+    public static List<HourlyWeather> fromJsonArray(JSONArray hourlyDataArray, long locationId)
+        throws JSONException {
+        List<HourlyWeather> hourlyWeathers = new ArrayList<>();
+        for (int i = 0; i < hourlyDataArray.length(); i++) {
+            JSONObject hourlyData = hourlyDataArray.getJSONObject(i);
+            HourlyWeather hourlyWeather = HourlyWeather.fromJson(hourlyData);
+            hourlyWeather.setLocationId(locationId);
+            hourlyWeathers.add(hourlyWeather);
+        }
+        return hourlyWeathers;
     }
 }

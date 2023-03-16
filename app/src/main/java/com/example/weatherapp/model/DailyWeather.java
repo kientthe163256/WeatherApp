@@ -5,13 +5,17 @@ import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.PrimaryKey;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-@Entity(foreignKeys = {@ForeignKey(entity = AppLocation.class,
-        parentColumns = "id",
-        childColumns = "location_id",
-        onDelete = ForeignKey.CASCADE)})
+@Entity(foreignKeys = {
+    @ForeignKey(entity = AppLocation.class, parentColumns = "id", childColumns = "location_id", onDelete = ForeignKey.CASCADE)})
 public class DailyWeather {
+
     @PrimaryKey(autoGenerate = true)
     private long id;
 
@@ -42,7 +46,8 @@ public class DailyWeather {
         lastUpdate = now.getTime();
     }
 
-    public DailyWeather(long time, long sunrise, long sunset, double minTemp, double maxTemp, String weather, String description, long locationId) {
+    public DailyWeather(long time, long sunrise, long sunset, double minTemp, double maxTemp,
+        String weather, String description, long locationId) {
         this.time = time;
         this.sunrise = sunrise;
         this.sunset = sunset;
@@ -133,5 +138,29 @@ public class DailyWeather {
 
     public void setLastUpdate(long lastUpdate) {
         this.lastUpdate = lastUpdate;
+    }
+
+    public static DailyWeather fromJson(JSONObject dailyData, long locationId) throws JSONException {
+        long time = dailyData.getLong("dt") * 1000;
+        long sunrise = dailyData.getLong("sunrise") * 1000;
+        long sunset = dailyData.getLong("sunset") * 1000;
+
+        JSONObject temp = dailyData.getJSONObject("temp");
+        double minTemp = temp.getDouble("min");
+        double maxTemp = temp.getDouble("max");
+        JSONObject weather = dailyData.getJSONArray("weather").getJSONObject(0);
+        String mainWeather = weather.getString("main");
+        String description = weather.getString("description");
+
+        return new DailyWeather(time, sunrise, sunset, minTemp, maxTemp, mainWeather, description,
+            locationId);
+    }
+
+    public static List<DailyWeather> fromJsonArray(JSONArray dailyData, long locationId) throws JSONException {
+        List<DailyWeather> dailyWeatherList = new ArrayList<>();
+        for (int i = 0; i < dailyData.length(); i++) {
+            dailyWeatherList.add(fromJson(dailyData.getJSONObject(i), locationId));
+        }
+        return dailyWeatherList;
     }
 }
