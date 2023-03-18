@@ -7,10 +7,16 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
+import com.android.volley.Response;
 import com.example.weatherapp.dao.AppDatabase;
 import com.example.weatherapp.dao.LocationDao;
 import com.example.weatherapp.model.AppLocation;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class LocationActivity extends AppCompatActivity {
@@ -36,5 +42,16 @@ public class LocationActivity extends AppCompatActivity {
         findViewById(R.id.btnDelete).setOnClickListener(
             v -> locationDao.delete(appLocationList.get(0)));
     }
+
+    Response.Listener<String> locationListener = response -> {
+        try {
+            JSONArray jsonArray = new JSONArray(response);
+            List<AppLocation> appLocationList = AppLocation.fromJsonArray(jsonArray);
+            // TODO: add data to db
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    };
 
 }

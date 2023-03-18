@@ -63,6 +63,22 @@ public class ApiService {
         requestQueue.add(stringRequest);
     }
 
+    public void getGeocodingTest(String locationName,
+                              Response.Listener<String> locationListener) {
+        if (!hasInternetConnection()) {
+            Toast.makeText(context, "Please check Internet connection!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String requestUrl = geocodingUrl + "?q=" + locationName + "&appid=" + apiKey;
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl,
+                locationListener,
+                error -> Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show());
+        RequestQueue requestQueue = Volley.newRequestQueue(context);
+        requestQueue.add(stringRequest);
+    }
+
+
+
     public void getGeocoding(String locationName) {
         if (!hasInternetConnection()) {
             Toast.makeText(context, "Please check Internet connection!", Toast.LENGTH_SHORT).show();

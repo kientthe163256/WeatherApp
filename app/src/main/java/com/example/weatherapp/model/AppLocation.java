@@ -3,6 +3,13 @@ package com.example.weatherapp.model;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 public class AppLocation {
     @PrimaryKey(autoGenerate = true)
@@ -92,5 +99,26 @@ public class AppLocation {
                 ", state='" + state + '\'' +
                 ", country='" + country + '\'' +
                 '}';
+    }
+
+    public static AppLocation fromJson(JSONObject locationData) throws JSONException {
+        String name = locationData.getString("name");
+        double latitude = locationData.getDouble("lat");
+        double longitude = locationData.getDouble("lon");
+        String state = locationData.getString("state");
+        String country = locationData.getString("country");
+
+        return new AppLocation(name,latitude,longitude,state,country);
+    }
+
+    public static List<AppLocation> fromJsonArray(JSONArray locationDataArray)
+            throws JSONException {
+        List<AppLocation> locationWeathers = new ArrayList<>();
+        for (int i = 0; i < locationDataArray.length(); i++) {
+            JSONObject locationData = locationDataArray.getJSONObject(i);
+            AppLocation locationWeather = AppLocation.fromJson(locationData);
+            locationWeathers.add(locationWeather);
+        }
+        return locationWeathers;
     }
 }
