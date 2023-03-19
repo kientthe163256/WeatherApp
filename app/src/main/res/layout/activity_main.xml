@@ -21,7 +21,7 @@
         android:paddingBottom="50dp"
         tools:context=".MainActivity">
 
-
+        <!--region Main-->
         <LinearLayout
           android:id="@+id/generalInfo"
           android:layout_width="match_parent"
@@ -44,8 +44,13 @@
             android:layout_height="wrap_content"
             android:paddingStart="5dp"
             android:text="19" />
-
-
+          <TextView
+            style="@style/smallTextStyle"
+            android:id="@+id/description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Loading..." />
           <TextView
             style="@style/smallTextStyle"
             android:id="@+id/date_time"
@@ -54,6 +59,7 @@
             android:layout_marginTop="20dp"
             android:text="Thu, 23:57" />
         </LinearLayout>
+        <!--endregion-->
 
         <androidx.recyclerview.widget.RecyclerView
           android:id="@+id/weatherByHour"
@@ -75,6 +81,62 @@
           android:background="@drawable/rv_background"
           android:padding="15dp"
           android:stretchColumns="*" />
+
+        <LinearLayout
+          android:layout_width="match_parent"
+          android:layout_marginHorizontal="15dp"
+          android:layout_marginTop="20dp"
+          android:layout_below="@+id/daily_weather"
+          android:layout_height="wrap_content">
+
+          <RelativeLayout
+            android:layout_width="0dp"
+            android:padding="15dp"
+            android:layout_marginRight="10dp"
+            android:background="@drawable/rv_background"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <TextView
+              android:id="@+id/sun_rise"
+              style="@style/normalTextStyle"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="Sun rise" />
+            <TextView
+              android:id="@+id/sun_rise_time"
+              style="@style/textLg"
+              android:layout_below="@+id/sun_rise"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="05:59" />
+          </RelativeLayout>
+
+          <RelativeLayout
+            android:layout_width="0dp"
+            android:padding="15dp"
+            android:layout_marginLeft="10dp"
+            android:background="@drawable/rv_background"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <TextView
+              android:id="@+id/sun_set"
+              style="@style/normalTextStyle"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="Sun set" />
+            <TextView
+              android:id="@+id/sun_set_time"
+              android:layout_below="@+id/sun_set"
+              style="@style/textLg"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="18:10" />
+          </RelativeLayout>
+
+
+        </LinearLayout>
 
       </RelativeLayout>
     </ScrollView>

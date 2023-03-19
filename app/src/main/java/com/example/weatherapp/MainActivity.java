@@ -39,6 +39,8 @@ import com.example.weatherapp.model.AppLocation;
 import com.example.weatherapp.model.DailyWeather;
 import com.example.weatherapp.model.HourlyWeather;
 import com.example.weatherapp.service.ApiService;
+import com.example.weatherapp.util.DefaultConfig;
+import com.example.weatherapp.util.Util;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -51,9 +53,7 @@ import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.Task;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import org.json.JSONArray;
@@ -71,8 +71,6 @@ public class MainActivity extends AppCompatActivity {
     LocationDao locationDao;
     HourlyWeatherDao hourlyWeatherDao;
     DailyWeatherDao dailyWeatherDao;
-    Context context;
-    private FusedLocationProviderClient fusedLocationProviderClient;
     public TextView tvLocationName;
     private ApiService apiService;
 
@@ -86,13 +84,9 @@ public class MainActivity extends AppCompatActivity {
         hourlyWeatherDao = db.hourlyWeatherDao();
         dailyWeatherDao = db.dailyWeatherDao();
         initializeCurrentLocationInDb();
-        context = getApplicationContext();
-        apiService = new ApiService(context);
+        apiService = new ApiService(getApplicationContext());
 
         setContentView(R.layout.activity_main);
-
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(
-            MainActivity.this);
 
         tvLocationName = findViewById(R.id.location);
 
@@ -107,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
 
         swipeRefreshLayout.setOnRefreshListener(() -> {
             getWeatherData();
+            setUpTimeInfo();
             swipeRefreshLayout.setRefreshing(false);
         });
 
@@ -120,11 +115,19 @@ public class MainActivity extends AppCompatActivity {
     Response.Listener<String> hourlyListener = response -> {
         try {
             JSONObject jsonResponse = new JSONObject(response);
-            JSONArray hourlyDataArray = jsonResponse.getJSONArray("list");
-            List<HourlyWeather> hourlyWeathers = HourlyWeather.fromJsonArray(hourlyDataArray,
+            JSONArray hourlyData = jsonResponse.getJSONArray("list");
+            List<HourlyWeather> hourlyWeathers = HourlyWeather.fromJsonArray(hourlyData,
                 appLocation.getId());
             hourlyWeatherDao.deleteByLocationId(appLocation.getId());
             hourlyWeatherDao.insert(hourlyWeathers);
+
+            String currentDescription = hourlyWeathers.get(0).getDescription();
+            setUpCurrentDescriptionInfo(currentDescription);
+
+            int currentTemp = (int) Math.round(
+                hourlyWeathers.get(0).getTemperature() - DefaultConfig.KELVIN);
+            setUpCurrentTempInfo(currentTemp + "°");
+
             setUpHourlyWeather(hourlyWeathers);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -140,21 +143,37 @@ public class MainActivity extends AppCompatActivity {
             dailyWeatherDao.deleteByLocationId(appLocation.getId());
             dailyWeatherDao.insert(dailyWeathers);
             setUpDailyWeather(dailyWeathers);
+            Date sunrise = new Date(dailyWeathers.get(0).getSunrise() * 1000);
+            Date sunset = new Date(dailyWeathers.get(0).getSunset() * 1000);
+            setUpSunInfo(sunrise, sunset);
         } catch (JSONException e) {
             e.printStackTrace();
         }
     };
 
+    private void setUpSunInfo(Date sunrise, Date sunset) {
+        TextView tvSunrise = findViewById(R.id.sun_rise_time);
+        TextView tvSunset = findViewById(R.id.sun_set_time);
+        String sunriseTime = Util.formatDate("HH:mm", sunrise);
+        String sunsetTime = Util.formatDate("HH:mm", sunset);
+        tvSunrise.setText(sunriseTime);
+        tvSunset.setText(sunsetTime);
+    }
+
     private void setUpTimeInfo() {
         TextView tvTime = findViewById(R.id.date_time);
-        SimpleDateFormat formatter = new SimpleDateFormat("EE, HH:mm", Locale.ENGLISH);
-        Date date = new Date();
-        tvTime.setText(formatter.format(date));
+        String time = Util.formatDate("EE, HH:mm", new Date());
+        tvTime.setText(time);
     }
 
     private void setUpCurrentTempInfo(String temp) {
         TextView tvTemp = findViewById(R.id.temperature);
         tvTemp.setText(temp);
+    }
+
+    private void setUpCurrentDescriptionInfo(String description) {
+        TextView tvDescription = findViewById(R.id.description);
+        tvDescription.setText(description);
     }
 
     public boolean hasInternetConnection() {
@@ -255,6 +274,8 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Please grant location permissions", Toast.LENGTH_SHORT).show();
             return;
         }
+        FusedLocationProviderClient fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(
+            MainActivity.this);
         fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_LOW_POWER, null)
             .addOnSuccessListener(this, this::processReceivedLocation);
     }
@@ -341,24 +362,13 @@ public class MainActivity extends AppCompatActivity {
             TableRow row = inflater.inflate(R.layout.daily_weather_layout, null, false)
                 .findViewById(R.id.row_day);
             TextView date = row.findViewById(R.id.row_day_day);
-            String dateStr = getDayOfWeek("EEEE", new Date(dailyWeather.getTime()));
+            String dateStr = Util.formatDate("EEEE", new Date(dailyWeather.getTime()));
             date.setText(dateStr);
             ImageView icon = row.findViewById(R.id.row_day_icon);
-            HashMap<String, Integer> iconMap = getIconMap();
-            iconMap.put("Cloudy", R.drawable.cloudy);
-            iconMap.put("Sunny", R.drawable.sun);
             icon.setImageResource(
-                iconMap.getOrDefault(dailyWeather.getWeather(), R.drawable.cloudy));
+                DefaultConfig.getIconResource(dailyWeather.getWeather()));
 
-            View tempDiff = row.findViewById(R.id.row_day_range_fg);
-            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) tempDiff.getLayoutParams();
-            params.leftMargin = dpToPx(
-                (int) ((dailyWeather.getMinTemp() - minTemp) / maxTempDiff * 100));
-            int width = dpToPx(
-                (int) ((dailyWeather.getMaxTemp() - dailyWeather.getMinTemp()) / maxTempDiff
-                    * 100));
-            params.width = dpToPx(width);
-            tempDiff.setLayoutParams(params);
+            displayTempRange(minTemp, maxTempDiff, dailyWeather, row);
 
             TextView minTempView = row.findViewById(R.id.row_day_min_temp);
             minTempView.setText(String.valueOf((int) dailyWeather.getMinTemp()));
@@ -367,6 +377,19 @@ public class MainActivity extends AppCompatActivity {
             maxTempView.setText(String.valueOf((int) dailyWeather.getMaxTemp()));
             tableLayout.addView(row);
         }
+    }
+
+    private void displayTempRange(int minTemp, int maxTempDiff, DailyWeather dailyWeather,
+        TableRow row) {
+        View tempDiff = row.findViewById(R.id.row_day_range_fg);
+        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) tempDiff.getLayoutParams();
+        params.leftMargin = dpToPx(
+            (int) ((dailyWeather.getMinTemp() - minTemp) / maxTempDiff * 100));
+        int width = dpToPx(
+            (int) ((dailyWeather.getMaxTemp() - dailyWeather.getMinTemp()) / maxTempDiff
+                * 100));
+        params.width = dpToPx(width);
+        tempDiff.setLayoutParams(params);
     }
 
     private int dpToPx(int dp) {
@@ -382,18 +405,5 @@ public class MainActivity extends AppCompatActivity {
     private int getMinTemp(List<DailyWeather> dailyWeathers) {
         return dailyWeathers.stream().map(dailyWeather -> (int) dailyWeather.getMinTemp())
             .min(Integer::compareTo).orElse(0);
-    }
-
-    private HashMap<String, Integer> getIconMap() {
-        HashMap<String, Integer> iconMap = new HashMap<>();
-        iconMap.put("Sunny", R.drawable.sun);
-        iconMap.put("Cloudy", R.drawable.cloudy);
-        return iconMap;
-    }
-
-    private String getDayOfWeek(String format, Date date) {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format, Locale.ENGLISH);
-        simpleDateFormat.setLenient(false);
-        return simpleDateFormat.format(date);
     }
 }

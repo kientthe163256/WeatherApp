@@ -157,10 +157,10 @@ public class DailyWeather {
     }
 
     public static List<DailyWeather> fromJsonArray(JSONArray dailyData, long locationId) throws JSONException {
-        List<DailyWeather> dailyWeatherList = new ArrayList<>();
+        List<DailyWeather> dailyWeathers = new ArrayList<>();
         for (int i = 0; i < dailyData.length(); i++) {
-            dailyWeatherList.add(fromJson(dailyData.getJSONObject(i), locationId));
+            dailyWeathers.add(fromJson(dailyData.getJSONObject(i), locationId));
         }
-        return dailyWeatherList;
+        return dailyWeathers;
     }
 }
