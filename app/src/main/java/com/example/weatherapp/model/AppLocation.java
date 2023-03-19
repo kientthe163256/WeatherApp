@@ -1,5 +1,6 @@
 package com.example.weatherapp.model;
 
+import androidx.annotation.Nullable;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
@@ -125,4 +126,5 @@ public class AppLocation implements Serializable {
         }
         return locationWeathers;
     }
+
 }

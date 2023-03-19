@@ -68,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
         locationHelper = new LocationHelper(this);
 
         setContentView(R.layout.activity_main);
+        System.out.println(locationDao.getAllLocations());
 
         initializeCurrentLocationInDb();
 
