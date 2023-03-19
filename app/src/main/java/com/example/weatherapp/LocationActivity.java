@@ -14,13 +14,17 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.View;
+import android.widget.Adapter;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Response;
+import com.example.weatherapp.adapter.LocationListAdapter;
 import com.example.weatherapp.dao.AppDatabase;
 import com.example.weatherapp.dao.LocationDao;
 import com.example.weatherapp.model.AppLocation;
@@ -37,13 +41,13 @@ public class LocationActivity extends AppCompatActivity {
     AppDatabase db;
     LocationDao locationDao;
     ApiService apiService;
-
-    private TextView searchView;
     private ArrayList<AppLocation> appLocations = new ArrayList();
-    private EditText editText;
+    LocationListAdapter adapter ;
+    private TextView searchView;
+    private SearchView editSearch;
     private ListView listView;
-    
     private Dialog dialog;
+    Context context;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,51 +55,80 @@ public class LocationActivity extends AppCompatActivity {
         setContentView(R.layout.location_activity);
 
         db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "WeatherApp").allowMainThreadQueries().build();
+        context = getApplicationContext();
         locationDao = db.locationDao();
         apiService = new ApiService(getApplicationContext());
         searchView = findViewById(R.id.searchTxt);
+        apiService.getGeocodingTest("hanoi", locationListener);
         searchView.setOnClickListener(
                 new View.OnClickListener() {
+
+
                     @Override
                     public void onClick(View v) {
+
+                        // dialog
                         dialog = new Dialog(LocationActivity.this);
                         dialog.setContentView(R.layout.dialog_searchable_spinner);
                         dialog.getWindow().setLayout(650, 800);
                         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
                         dialog.show();
-                        editText = dialog.findViewById(R.id.search_edit_text);
+                        //
+                        editSearch = dialog.findViewById(R.id.search);
                         listView = dialog.findViewById(R.id.list_location);
-                        editText.addTextChangedListener(new TextWatcher() {
-                            @Override
-                            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                        // event
 
+                        //
+//                        editText.addTextChangedListener(new TextWatcher() {
+//                            @Override
+//                            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+//                            }
+//                            @Override
+//                            public void onTextChanged(CharSequence s, int start, int before, int count) {
+//
+//                            }
+//                            @Override
+//                            public void afterTextChanged(Editable s) {
+//                                String searchContent = editText.getText().toString();
+//                                apiService.getGeocodingTest(searchContent, locationListener);
+//                                adapter = new ArrayAdapter(getApplicationContext(), com.google.android.material.R.layout.support_simple_spinner_dropdown_item, appLocations);
+//                                adapter.notifyDataSetChanged();
+//                                runOnUiThread(
+//                                        () ->
+//
+//                                );
+//                            }
+//                        });
+                        editSearch.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                            @Override
+                            public boolean onQueryTextSubmit(String query) {
+                                return false;
                             }
 
                             @Override
-                            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                            public boolean onQueryTextChange(String newText) {
+                                String text = newText;
 
-                            }
-
-                            @Override
-                            public void afterTextChanged(Editable s) {
-                                String searchContent = editText.getText().toString();
-                                apiService.getGeocodingTest(searchContent,locationListener);
+                                apiService.getGeocodingTest(text, locationListener);
+                                // Pass results to ListViewAdapter Class
+                                adapter = new LocationListAdapter(context, appLocations);
+                                adapter.notifyDataSetChanged();
+                                // Binds the Adapter to the ListView
+                                listView.setAdapter(adapter);
+                                return false;
                             }
                         });
-                        // viet cai list view o day
                     }
                 });
-
-
-
     }
 
     Response.Listener<String> locationListener = response -> {
         try {
             JSONArray jsonArray = new JSONArray(response);
             appLocations = (ArrayList<AppLocation>) AppLocation.fromJsonArray(jsonArray);
-            // TODO: add data to db
             System.out.println(appLocations);
+
+            // TODO: add data to db
         } catch (JSONException e) {
             e.printStackTrace();
         }

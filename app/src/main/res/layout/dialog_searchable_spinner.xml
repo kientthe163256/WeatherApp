@@ -14,15 +14,26 @@
         android:textSize="20sp"
         android:textStyle="bold"/>
 
-    <EditText
+<!--    <EditText-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:id="@+id/search_edit_text"-->
+<!--        android:hint="Search..."-->
+<!--        android:padding="12dp"-->
+<!--        android:singleLine="true"-->
+<!--        android:layout_marginTop="8dp"-->
+<!--        android:background="@android:drawable/editbox_background"/>-->
+
+    <SearchView
+        android:id="@+id/search"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/search_edit_text"
-        android:hint="Search..."
-        android:padding="12dp"
-        android:singleLine="true"
-        android:layout_marginTop="8dp"
-        android:background="@android:drawable/editbox_background"/>
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="2dp"
+        android:iconifiedByDefault="false">
+
+        <requestFocus />
+    </SearchView>
 
     <ListView
         android:layout_width="match_parent"
