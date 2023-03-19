@@ -59,19 +59,18 @@ public class ApiService {
 
     public void getGeocodingTest(String locationName,
                               Response.Listener<String> locationListener) {
+
         if (!hasInternetConnection()) {
             Toast.makeText(context, "Please check Internet connection!", Toast.LENGTH_SHORT).show();
             return;
         }
-        String requestUrl = geocodingUrl + "?q=" + locationName + "&appid=" + apiKey;
+        String requestUrl = geocodingUrl + "?q=" + locationName + "&appid=" + apiKey + "&limit=" + 5;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, requestUrl,
                 locationListener,
                 error -> Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show());
         RequestQueue requestQueue = Volley.newRequestQueue(context);
         requestQueue.add(stringRequest);
     }
-
-
 
     public void getGeocoding(String locationName) {
         if (!hasInternetConnection()) {
@@ -109,6 +108,8 @@ public class ApiService {
         RequestQueue requestQueue = Volley.newRequestQueue(context);
         requestQueue.add(stringRequest);
     }
+
+
 
 
     private boolean hasInternetConnection() {

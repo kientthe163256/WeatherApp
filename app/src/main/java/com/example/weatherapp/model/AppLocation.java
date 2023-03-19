@@ -105,10 +105,13 @@ public class AppLocation {
         String name = locationData.getString("name");
         double latitude = locationData.getDouble("lat");
         double longitude = locationData.getDouble("lon");
-        String state = locationData.getString("state");
+        String state = "";
+        if (locationData.has("state")) {
+            state = locationData.getString("state");
+        }
         String country = locationData.getString("country");
 
-        return new AppLocation(name,latitude,longitude,state,country);
+        return new AppLocation(name, latitude, longitude, state, country);
     }
 
     public static List<AppLocation> fromJsonArray(JSONArray locationDataArray)
