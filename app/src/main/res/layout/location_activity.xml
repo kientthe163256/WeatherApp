@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
-    <EditText
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/searchTxt"
@@ -14,8 +14,7 @@
         android:gravity="center_vertical"
         android:drawableEnd="@drawable/search_icon"
         android:layout_marginBottom="2dp"
-        app:showAsAction="always"
-        app:actionViewClass="android.widget.SearchView"/>
+        />
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_layout"

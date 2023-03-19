@@ -3,15 +3,20 @@ package com.example.weatherapp;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.room.Room;
 
+import android.app.Dialog;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
 
@@ -33,9 +38,12 @@ public class LocationActivity extends AppCompatActivity {
     LocationDao locationDao;
     ApiService apiService;
 
-    private SearchView searchView;
+    private TextView searchView;
     private ArrayList<AppLocation> appLocations = new ArrayList();
     private EditText editText;
+    private ListView listView;
+    
+    private Dialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,33 +53,21 @@ public class LocationActivity extends AppCompatActivity {
         db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "WeatherApp").allowMainThreadQueries().build();
         locationDao = db.locationDao();
         apiService = new ApiService(getApplicationContext());
-//        List<AppLocation> appLocationList = locationDao.getAllLocations();
-//        TextView textView = findViewById(R.id.tv_location);
-//        String text = "";
-//        for (int i = 0; i < appLocationList.size(); i++) {
-//            text += appLocationList.get(i).toString();
-//        }
-//        textView.setText(text);
-//
-//        findViewById(R.id.btnDelete).setOnClickListener(
-//            v -> locationDao.delete(appLocationList.get(0)));
-        editText = findViewById(R.id.searchTxt);
-        editText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        searchView = findViewById(R.id.searchTxt);
+        searchView.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        dialog = new Dialog(LocationActivity.this);
+                        dialog.setContentView(R.layout.dialog_searchable_spinner);
+                        dialog.getWindow().setLayout(650, 800);
+                        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                        dialog.show();
+                        editText = dialog.findViewById(R.id.search_edit_text);
+                        listView = dialog.findViewById(R.id.list_location);
+                    };
+                });
 
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                String searchContent = editText.getText().toString();
-                apiService.getGeocodingTest(searchContent, locationListener);
-            }
-        });
     }
 
     Response.Listener<String> locationListener = response -> {
