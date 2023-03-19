@@ -6,6 +6,8 @@ import java.util.HashMap;
 
 public class DefaultConfig {
 
+    public static final int REQUEST_CODE = 100;
+    public static final int REQUEST_CHECK_SETTING = 1001;
     public static final long CURRENT_LOCATION_ID = 1;
     private static final long DEFAULT_LOCATION_ID = 2;
     public static final AppLocation DEFAULT_APP_LOCATION = new AppLocation(DEFAULT_LOCATION_ID,

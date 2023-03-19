@@ -52,7 +52,6 @@ import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.Task;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -62,33 +61,27 @@ import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
 
-    private final int REQUEST_CODE = 100;
-    private final int REQUEST_CHECK_SETTING = 1001;
-
-    public static AppLocation appLocation = DefaultConfig.DEFAULT_APP_LOCATION;
-
-    AppDatabase db;
-    LocationDao locationDao;
-    HourlyWeatherDao hourlyWeatherDao;
-    DailyWeatherDao dailyWeatherDao;
-    public TextView tvLocationName;
+    private AppLocation appLocation = DefaultConfig.DEFAULT_APP_LOCATION;
+    private LocationDao locationDao;
+    private HourlyWeatherDao hourlyWeatherDao;
+    private DailyWeatherDao dailyWeatherDao;
     private ApiService apiService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "WeatherApp")
+        AppDatabase db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
+                "WeatherApp")
             .fallbackToDestructiveMigration().allowMainThreadQueries().build();
         locationDao = db.locationDao();
         hourlyWeatherDao = db.hourlyWeatherDao();
         dailyWeatherDao = db.dailyWeatherDao();
-        initializeCurrentLocationInDb();
         apiService = new ApiService(getApplicationContext());
 
         setContentView(R.layout.activity_main);
 
-        tvLocationName = findViewById(R.id.location);
+        initializeCurrentLocationInDb();
 
         if (!hasInternetConnection()) {
             getDefaultLocationWeather();
@@ -97,8 +90,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         setUpTimeInfo();
-        SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
 
+        SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
         swipeRefreshLayout.setOnRefreshListener(() -> {
             getWeatherData();
             setUpTimeInfo();
@@ -151,46 +144,10 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void setUpSunInfo(Date sunrise, Date sunset) {
-        TextView tvSunrise = findViewById(R.id.sun_rise_time);
-        TextView tvSunset = findViewById(R.id.sun_set_time);
-        String sunriseTime = Util.formatDate("HH:mm", sunrise);
-        String sunsetTime = Util.formatDate("HH:mm", sunset);
-        tvSunrise.setText(sunriseTime);
-        tvSunset.setText(sunsetTime);
-    }
-
-    private void setUpTimeInfo() {
-        TextView tvTime = findViewById(R.id.date_time);
-        String time = Util.formatDate("EE, HH:mm", new Date());
-        tvTime.setText(time);
-    }
-
-    private void setUpCurrentTempInfo(String temp) {
-        TextView tvTemp = findViewById(R.id.temperature);
-        tvTemp.setText(temp);
-    }
-
-    private void setUpCurrentDescriptionInfo(String description) {
-        TextView tvDescription = findViewById(R.id.description);
-        tvDescription.setText(description);
-    }
-
     public boolean hasInternetConnection() {
         ConnectivityManager cm = (ConnectivityManager) getApplicationContext().getSystemService(
             Context.CONNECTIVITY_SERVICE);
         return cm.getNetworkCapabilities(cm.getActiveNetwork()) != null;
-    }
-
-    private void setUpHourlyWeather(List<HourlyWeather> hourlyWeathers) {
-        RecyclerView recyclerView = findViewById(R.id.weatherByHour);
-
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this,
-            LinearLayoutManager.HORIZONTAL, false);
-        recyclerView.setLayoutManager(layoutManager);
-
-        RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(hourlyWeathers);
-        recyclerView.setAdapter(rvAdapter);
     }
 
     private void checkLocationPermission() {
@@ -204,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void requestPermission() {
         ActivityCompat.requestPermissions(MainActivity.this,
-            new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_CODE);
+            new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, DefaultConfig.REQUEST_CODE);
     }
 
     private void checkGPS() {
@@ -229,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
                         // try to ask user turn on GPS
                         ResolvableApiException resolvableApiException = (ResolvableApiException) e;
                         resolvableApiException.startResolutionForResult(MainActivity.this,
-                            REQUEST_CHECK_SETTING);
+                            DefaultConfig.REQUEST_CHECK_SETTING);
                     } catch (SendIntentException ex) {
                         ex.printStackTrace();
                     }
@@ -242,29 +199,27 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
         @NonNull int[] grantResults) {
-        if (requestCode == REQUEST_CODE && (grantResults.length <= 0
+        if (requestCode == DefaultConfig.REQUEST_CODE && (grantResults.length <= 0
             || grantResults[0] != PackageManager.PERMISSION_GRANTED)) {
             Toast.makeText(this, "LOCATION PERMISSION MUST BE GRANTED", Toast.LENGTH_LONG)
                 .show();
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
-
     // check after request turn on GPS
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (requestCode == REQUEST_CHECK_SETTING) {
+        if (requestCode == DefaultConfig.REQUEST_CHECK_SETTING) {
             if (resultCode == Activity.RESULT_OK) {
                 getCurrentLocation();
             } else {
                 // user don't turn on GPS, set appLocation to default appLocation
-                MainActivity.appLocation = DefaultConfig.DEFAULT_APP_LOCATION;
+                appLocation = DefaultConfig.DEFAULT_APP_LOCATION;
                 getWeatherData();
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
-
     private void getCurrentLocation() {
         // the entire comparison is here because the editor will throw a warning otherwise
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -280,37 +235,36 @@ public class MainActivity extends AppCompatActivity {
             .addOnSuccessListener(this, this::processReceivedLocation);
     }
 
-
     private void processReceivedLocation(Location location) {
-        if (location != null) {
-            Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
-            try {
-                List<Address> addresses = geocoder.getFromLocation(location.getLatitude(),
-                    location.getLongitude(), 1);
-                Address address = addresses.get(0);
-                MainActivity.appLocation.setId(DefaultConfig.CURRENT_LOCATION_ID);
-                MainActivity.appLocation.setLatitude(address.getLatitude());
-                MainActivity.appLocation.setLongitude(location.getLongitude());
-                MainActivity.appLocation.setName(address.getSubAdminArea());
-                MainActivity.appLocation.setState(address.getAdminArea());
-                MainActivity.appLocation.setCountry(address.getCountryName());
-
-                AppLocation currentLocation = locationDao.getLocationById(
-                    DefaultConfig.CURRENT_LOCATION_ID);
-                currentLocation.setLatitude(address.getLatitude());
-                currentLocation.setLongitude(location.getLongitude());
-                currentLocation.setName(address.getSubAdminArea());
-                currentLocation.setState(address.getAdminArea());
-                currentLocation.setCountry(address.getCountryName());
-                locationDao.update(currentLocation);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            getWeatherData();
+        if (location == null) {
+            return;
         }
-    }
+        Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
+        try {
+            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(),
+                location.getLongitude(), 1);
+            Address address = addresses.get(0);
+            appLocation.setId(DefaultConfig.CURRENT_LOCATION_ID);
+            appLocation.setLatitude(address.getLatitude());
+            appLocation.setLongitude(location.getLongitude());
+            appLocation.setName(address.getSubAdminArea());
+            appLocation.setState(address.getAdminArea());
+            appLocation.setCountry(address.getCountryName());
 
+            AppLocation currentLocation = locationDao.getLocationById(
+                DefaultConfig.CURRENT_LOCATION_ID);
+            currentLocation.setLatitude(address.getLatitude());
+            currentLocation.setLongitude(location.getLongitude());
+            currentLocation.setName(address.getSubAdminArea());
+            currentLocation.setState(address.getAdminArea());
+            currentLocation.setCountry(address.getCountryName());
+            locationDao.update(currentLocation);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        getWeatherData();
+    }
     private void getWeatherData() {
         if (hasInternetConnection()) {
             // has Internet, call API
@@ -323,6 +277,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this, "No Internet", Toast.LENGTH_SHORT).show();
             getDefaultLocationWeather();
         }
+        TextView tvLocationName = findViewById(R.id.location);
         tvLocationName.setText(appLocation.getName());
     }
 
@@ -330,17 +285,84 @@ public class MainActivity extends AppCompatActivity {
         List<HourlyWeather> hourlyWeathers = hourlyWeatherDao.getByLocationId(appLocation.getId());
         List<DailyWeather> dailyWeathers = dailyWeatherDao.getByLocationId(appLocation.getId());
 
+        TextView tvLocationName = findViewById(R.id.location);
         tvLocationName.setText(appLocation.getName());
         setUpHourlyWeather(hourlyWeathers);
         setUpDailyWeather(dailyWeathers);
     }
-
     private void initializeCurrentLocationInDb() {
         if (locationDao.getLocationById(DefaultConfig.CURRENT_LOCATION_ID) == null) {
             AppLocation appLocation = DefaultConfig.DEFAULT_APP_LOCATION;
             appLocation.setId(DefaultConfig.CURRENT_LOCATION_ID);
             locationDao.insert(appLocation);
         }
+    }
+
+    private void displayTempRange(int minTemp, int maxTempDiff, DailyWeather dailyWeather,
+        TableRow row) {
+        View tempDiff = row.findViewById(R.id.row_day_range_fg);
+        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) tempDiff.getLayoutParams();
+        params.leftMargin = dpToPx(
+            (int) ((dailyWeather.getMinTemp() - minTemp) / maxTempDiff * 100));
+        int width = dpToPx(
+            (int) ((dailyWeather.getMaxTemp() - dailyWeather.getMinTemp()) / maxTempDiff
+                * 100));
+        params.width = dpToPx(width);
+        tempDiff.setLayoutParams(params);
+    }
+
+    /**
+     * UI display section
+     */
+    private int dpToPx(int dp) {
+        return dp * (getResources().getDisplayMetrics().densityDpi
+            / DisplayMetrics.DENSITY_DEFAULT);
+    }
+
+    private int getMaxTemp(List<DailyWeather> dailyWeathers) {
+        return dailyWeathers.stream().map(dailyWeather -> (int) dailyWeather.getMaxTemp())
+            .max(Integer::compareTo).orElse(0);
+    }
+
+    private int getMinTemp(List<DailyWeather> dailyWeathers) {
+        return dailyWeathers.stream().map(dailyWeather -> (int) dailyWeather.getMinTemp())
+            .min(Integer::compareTo).orElse(0);
+    }
+
+    private void setUpTimeInfo() {
+        TextView tvTime = findViewById(R.id.date_time);
+        String time = Util.formatDate("EE, HH:mm", new Date());
+        tvTime.setText(time);
+    }
+
+    private void setUpSunInfo(Date sunrise, Date sunset) {
+        TextView tvSunrise = findViewById(R.id.sun_rise_time);
+        TextView tvSunset = findViewById(R.id.sun_set_time);
+        String sunriseTime = Util.formatDate("HH:mm", sunrise);
+        String sunsetTime = Util.formatDate("HH:mm", sunset);
+        tvSunrise.setText(sunriseTime);
+        tvSunset.setText(sunsetTime);
+    }
+
+    private void setUpCurrentTempInfo(String temp) {
+        TextView tvTemp = findViewById(R.id.temperature);
+        tvTemp.setText(temp);
+    }
+
+    private void setUpCurrentDescriptionInfo(String description) {
+        TextView tvDescription = findViewById(R.id.description);
+        tvDescription.setText(description);
+    }
+
+    private void setUpHourlyWeather(List<HourlyWeather> hourlyWeathers) {
+        RecyclerView recyclerView = findViewById(R.id.weatherByHour);
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this,
+            LinearLayoutManager.HORIZONTAL, false);
+        recyclerView.setLayoutManager(layoutManager);
+
+        RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(hourlyWeathers);
+        recyclerView.setAdapter(rvAdapter);
     }
 
     private void setUpDailyWeather(List<DailyWeather> dailyWeathers) {
@@ -359,7 +381,7 @@ public class MainActivity extends AppCompatActivity {
         int minTemp = getMinTemp(dailyWeathers);
         int maxTempDiff = maxTemp - minTemp;
         for (DailyWeather dailyWeather : dailyWeathers) {
-            TableRow row = inflater.inflate(R.layout.daily_weather_layout, null, false)
+            TableRow row = inflater.inflate(R.layout.daily_weather_layout, tableLayout, false)
                 .findViewById(R.id.row_day);
             TextView date = row.findViewById(R.id.row_day_day);
             String dateStr = Util.formatDate("EEEE", new Date(dailyWeather.getTime()));
@@ -377,33 +399,5 @@ public class MainActivity extends AppCompatActivity {
             maxTempView.setText(String.valueOf((int) dailyWeather.getMaxTemp()));
             tableLayout.addView(row);
         }
-    }
-
-    private void displayTempRange(int minTemp, int maxTempDiff, DailyWeather dailyWeather,
-        TableRow row) {
-        View tempDiff = row.findViewById(R.id.row_day_range_fg);
-        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) tempDiff.getLayoutParams();
-        params.leftMargin = dpToPx(
-            (int) ((dailyWeather.getMinTemp() - minTemp) / maxTempDiff * 100));
-        int width = dpToPx(
-            (int) ((dailyWeather.getMaxTemp() - dailyWeather.getMinTemp()) / maxTempDiff
-                * 100));
-        params.width = dpToPx(width);
-        tempDiff.setLayoutParams(params);
-    }
-
-    private int dpToPx(int dp) {
-        return dp * (getResources().getDisplayMetrics().densityDpi
-            / DisplayMetrics.DENSITY_DEFAULT);
-    }
-
-    private int getMaxTemp(List<DailyWeather> dailyWeathers) {
-        return dailyWeathers.stream().map(dailyWeather -> (int) dailyWeather.getMaxTemp())
-            .max(Integer::compareTo).orElse(0);
-    }
-
-    private int getMinTemp(List<DailyWeather> dailyWeathers) {
-        return dailyWeathers.stream().map(dailyWeather -> (int) dailyWeather.getMinTemp())
-            .min(Integer::compareTo).orElse(0);
     }
 }
