@@ -64,8 +64,10 @@ public class LocationListAdapter extends BaseAdapter {
         }
         // Set the results into TextViews
         holder.name.setText(animalNamesList.get(position).getName());
+
         return view;
     }
+
 
     // Filter Class
 //    public void filter(String charText) {

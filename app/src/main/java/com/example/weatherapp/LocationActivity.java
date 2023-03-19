@@ -15,6 +15,7 @@ import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Adapter;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListAdapter;
@@ -42,7 +43,7 @@ public class LocationActivity extends AppCompatActivity {
     LocationDao locationDao;
     ApiService apiService;
     private ArrayList<AppLocation> appLocations = new ArrayList();
-    LocationListAdapter adapter ;
+    LocationListAdapter adapter;
     private TextView searchView;
     private SearchView editSearch;
     private ListView listView;
@@ -74,11 +75,21 @@ public class LocationActivity extends AppCompatActivity {
                         //
                         editSearch = dialog.findViewById(R.id.search);
                         listView = dialog.findViewById(R.id.list_location);
+                        listView.setOnItemClickListener((parent, view, position, id) -> {
+                            System.out.println(((AppLocation) parent.getAdapter().getItem(position)).getName());
+                            AppLocation appLocation = (AppLocation) parent.getAdapter().getItem(position);
+                            locationDao.insert(appLocation);
+                            Intent intent = new Intent(LocationActivity.this, MainActivity.class);
+                            intent.putExtra("current_location", appLocation);
+                            startActivity(intent);
+                        });
+
                         editSearch.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                             @Override
                             public boolean onQueryTextSubmit(String query) {
                                 return false;
                             }
+
                             @Override
                             public boolean onQueryTextChange(String newText) {
                                 String text = newText;

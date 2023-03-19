@@ -78,6 +78,8 @@ public class MainActivity extends AppCompatActivity {
             locationHelper.checkLocationPermission(this::processReceivedLocation);
         }
 
+
+
         setUpTimeInfo();
 
         SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
