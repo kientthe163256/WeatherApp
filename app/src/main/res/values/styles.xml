@@ -2,15 +2,21 @@
 <resources>
     <style name="normalTextStyle">
         <item name="android:textSize">25sp</item>
+        <item name="android:fontFamily">@fonts/inter</item>
     </style>
     <style name="textLg">
         <item name="android:textSize">45sp</item>
+        <item name="android:fontFamily">@fonts/inter</item>
     </style>
     <style name="headingTextStyle">
         <item name="android:textSize">75sp</item>
+        <item name="android:fontFamily">@fonts/inter</item>
     </style>
     <style name="smallTextStyle">
-        <item name="android:textSize">15sp</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:fontFamily">@fonts/inter</item>
     </style>
-
+    <style name="CustomFont">
+        <item name="android:fontFamily">@fonts/inter</item>
+    </style>
 </resources>

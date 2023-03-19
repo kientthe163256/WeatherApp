@@ -72,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
         initializeCurrentLocationInDb();
 
         if (!hasInternetConnection()) {
+            Toast.makeText(this, "No Internet", Toast.LENGTH_SHORT).show();
             getDefaultLocationWeather();
         } else {
             locationHelper.checkLocationPermission(this::processReceivedLocation);
