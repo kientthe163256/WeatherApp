@@ -62,8 +62,6 @@ public class LocationActivity extends AppCompatActivity {
         apiService.getGeocodingTest("hanoi", locationListener);
         searchView.setOnClickListener(
                 new View.OnClickListener() {
-
-
                     @Override
                     public void onClick(View v) {
 
@@ -76,50 +74,35 @@ public class LocationActivity extends AppCompatActivity {
                         //
                         editSearch = dialog.findViewById(R.id.search);
                         listView = dialog.findViewById(R.id.list_location);
-                        // event
-
-                        //
-//                        editText.addTextChangedListener(new TextWatcher() {
-//                            @Override
-//                            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-//                            }
-//                            @Override
-//                            public void onTextChanged(CharSequence s, int start, int before, int count) {
-//
-//                            }
-//                            @Override
-//                            public void afterTextChanged(Editable s) {
-//                                String searchContent = editText.getText().toString();
-//                                apiService.getGeocodingTest(searchContent, locationListener);
-//                                adapter = new ArrayAdapter(getApplicationContext(), com.google.android.material.R.layout.support_simple_spinner_dropdown_item, appLocations);
-//                                adapter.notifyDataSetChanged();
-//                                runOnUiThread(
-//                                        () ->
-//
-//                                );
-//                            }
-//                        });
                         editSearch.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                             @Override
                             public boolean onQueryTextSubmit(String query) {
                                 return false;
                             }
-
                             @Override
                             public boolean onQueryTextChange(String newText) {
                                 String text = newText;
-
-                                apiService.getGeocodingTest(text, locationListener);
-                                // Pass results to ListViewAdapter Class
-                                adapter = new LocationListAdapter(context, appLocations);
-                                adapter.notifyDataSetChanged();
-                                // Binds the Adapter to the ListView
-                                listView.setAdapter(adapter);
+                                Response.Listener<String> locationListener2 = response -> {
+                                    try {
+                                        JSONArray jsonArray = new JSONArray(response);
+                                        appLocations = (ArrayList<AppLocation>) AppLocation.fromJsonArray(jsonArray);
+                                        // Pass results to ListViewAdapter Class
+                                        adapter = new LocationListAdapter(context, appLocations);
+                                        adapter.notifyDataSetChanged();
+                                        // Binds the Adapter to the ListView
+                                        listView.setAdapter(adapter);
+                                        // TODO: add data to db
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                };
+                                apiService.getGeocodingTest(text, locationListener2);
                                 return false;
                             }
                         });
                     }
                 });
+
     }
 
     Response.Listener<String> locationListener = response -> {
@@ -127,7 +110,6 @@ public class LocationActivity extends AppCompatActivity {
             JSONArray jsonArray = new JSONArray(response);
             appLocations = (ArrayList<AppLocation>) AppLocation.fromJsonArray(jsonArray);
             System.out.println(appLocations);
-
             // TODO: add data to db
         } catch (JSONException e) {
             e.printStackTrace();
