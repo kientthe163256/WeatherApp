@@ -74,8 +74,26 @@ public class LocationHelper {
         }
         FusedLocationProviderClient fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(
             activity);
-        fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_LOW_POWER, null)
-            .addOnSuccessListener(activity, successListener);
+        // get current location
+        fusedLocationProviderClient.getLastLocation()
+            .addOnSuccessListener(activity, successListener).addOnCompleteListener(
+                task -> {
+                    if (task.isSuccessful()) {
+                        Location location = task.getResult();
+                        if (location != null) {
+                            successListener.onSuccess(location);
+                        } else {
+                            Toast.makeText(activity, "Can't get current location", Toast.LENGTH_SHORT)
+                                .show();
+                        }
+                    } else {
+                        Toast.makeText(activity, "Can't get current location", Toast.LENGTH_SHORT)
+                            .show();
+                    }
+                }
+            );
+        // fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_LOW_POWER, null)
+        //     .addOnSuccessListener(activity, successListener);
     }
 
     public void checkLocationPermission(OnSuccessListener<Location> successListener) {
