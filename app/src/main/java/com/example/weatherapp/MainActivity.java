@@ -13,11 +13,17 @@ import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -93,9 +99,24 @@ public class MainActivity extends AppCompatActivity {
         TextView menu = findViewById(R.id.menu_btn);
         menu.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, LocationActivity.class);
-            startActivity(intent);
+            locationActivityLauncher.launch(intent);
         });
     }
+
+    ActivityResultLauncher<Intent> locationActivityLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    if (result.getResultCode() == Activity.RESULT_OK) {
+                        Intent intent = result.getData();
+                        if (intent != null) {
+                            appLocation = (AppLocation) intent.getSerializableExtra("current_location");
+                            getWeatherData();
+                        }
+                    }
+                }
+            });
 
     Response.Listener<String> hourlyListener = response -> {
         try {
