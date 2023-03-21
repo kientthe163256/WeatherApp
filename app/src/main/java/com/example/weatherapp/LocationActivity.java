@@ -1,6 +1,8 @@
 package com.example.weatherapp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
 
 import android.app.Dialog;
@@ -26,6 +28,7 @@ import android.widget.Toast;
 
 import com.android.volley.Response;
 import com.example.weatherapp.adapter.LocationListAdapter;
+import com.example.weatherapp.adapter.RecycleViewLocation;
 import com.example.weatherapp.dao.AppDatabase;
 import com.example.weatherapp.dao.LocationDao;
 import com.example.weatherapp.model.AppLocation;
@@ -117,7 +120,12 @@ public class LocationActivity extends AppCompatActivity {
                         });
                     }
                 });
-
+        RecyclerView recycleViewLocation = findViewById(R.id.rcv_saved_locations);
+        RecycleViewLocation recycleViewLocationAdapter = new RecycleViewLocation(locationDao.getAllLocations(), this);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        recycleViewLocation.setLayoutManager(linearLayoutManager);
+        recycleViewLocation.setAdapter(recycleViewLocationAdapter);
     }
 
     Response.Listener<String> locationListener = response -> {

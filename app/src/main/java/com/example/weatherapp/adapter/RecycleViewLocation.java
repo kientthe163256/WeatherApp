@@ -1,39 +1,32 @@
 package com.example.weatherapp.adapter;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
-
 import com.example.weatherapp.R;
 import com.example.weatherapp.dao.AppDatabase;
 import com.example.weatherapp.dao.LocationDao;
 import com.example.weatherapp.model.AppLocation;
-import com.example.weatherapp.model.HourlyWeather;
-import com.example.weatherapp.util.DefaultConfig;
-
-import java.text.SimpleDateFormat;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class RecycleViewLocation extends RecyclerView.Adapter<RecycleViewLocation.ViewHolder>{
-    private LocationDao locationDao;
+    private final LocationDao locationDao;
     private List<AppLocation> appLocations;
-    private Context context;
-    public RecycleViewLocation(List<AppLocation> appLocations, Context context) {
-        Collections.sort(appLocations, ((o1, o2) -> (int) (o2.getId() - o1.getId())));
+    private final Activity activity;
+    public RecycleViewLocation(List<AppLocation> appLocations, Activity activity) {
+        appLocations.sort(((o1, o2) -> (int) (o2.getId() - o1.getId())));
         this.appLocations = appLocations;
-        this.context = context;
-        this.locationDao = Room.databaseBuilder(context, AppDatabase.class,
+        this.activity = activity;
+        this.locationDao = Room.databaseBuilder(activity.getApplicationContext(), AppDatabase.class,
                 "WeatherApp").fallbackToDestructiveMigration().allowMainThreadQueries().build().locationDao();
     }
     @Override
@@ -87,6 +80,14 @@ public class RecycleViewLocation extends RecyclerView.Adapter<RecycleViewLocatio
             locationDao.deleteById(appLocations.get(position).getId());
             appLocations = locationDao.getAllLocations();
             notifyDataSetChanged();
+        });
+        holder.itemView.setOnClickListener(v -> {
+            AppLocation appLocation = appLocations.get(position);
+        //    back to main activity
+            Intent intent = new Intent();
+            intent.putExtra("current_location", appLocation);
+            activity.setResult(Activity.RESULT_OK, intent);
+            activity.finish();
         });
     }
 
