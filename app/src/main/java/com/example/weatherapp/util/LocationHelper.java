@@ -10,6 +10,7 @@ import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.example.weatherapp.MainActivity;
+import com.example.weatherapp.model.AppLocation;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -19,6 +20,7 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
@@ -32,7 +34,8 @@ public class LocationHelper {
         this.activity = activity;
     }
 
-    public void checkGPS(OnSuccessListener<Location> successListener) {
+    public void checkGPS(OnSuccessListener<Location> successListener,
+        OnFailureListener failureListener) {
         long timeInterval = 1000;
         LocationRequest locationRequest = new LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY, timeInterval).setWaitForAccurateLocation(true).build();
@@ -47,7 +50,7 @@ public class LocationHelper {
             try {
                 // when GPS is already on
                 task.getResult(ApiException.class);
-                getCurrentLocation(successListener);
+                getCurrentLocation(successListener, failureListener);
             } catch (ApiException e) {
                 if (e.getStatusCode() == LocationSettingsStatusCodes.RESOLUTION_REQUIRED) {
                     try {
@@ -63,7 +66,8 @@ public class LocationHelper {
         });
     }
 
-    public void getCurrentLocation(OnSuccessListener<Location> successListener) {
+    public void getCurrentLocation(OnSuccessListener<Location> successListener,
+        OnFailureListener failureListener) {
         if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED &&
             ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -75,31 +79,23 @@ public class LocationHelper {
         FusedLocationProviderClient fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(
             activity);
         // get current location
-        fusedLocationProviderClient.getLastLocation()
-            .addOnSuccessListener(activity, successListener).addOnCompleteListener(
+        fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+            .addOnCompleteListener(
                 task -> {
-                    if (task.isSuccessful()) {
+                    if (task.isSuccessful() && task.getResult() != null) {
                         Location location = task.getResult();
-                        if (location != null) {
-                            successListener.onSuccess(location);
-                        } else {
-                            Toast.makeText(activity, "Can't get current location", Toast.LENGTH_SHORT)
-                                .show();
-                        }
+                        successListener.onSuccess(location);
                     } else {
-                        Toast.makeText(activity, "Can't get current location", Toast.LENGTH_SHORT)
-                            .show();
+                        failureListener.onFailure(new Exception("Cannot get current location"));
                     }
-                }
-            );
-        // fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_LOW_POWER, null)
-        //     .addOnSuccessListener(activity, successListener);
+                });
     }
 
-    public void checkLocationPermission(OnSuccessListener<Location> successListener) {
+    public void checkLocationPermission(OnSuccessListener<Location> successListener,
+        OnFailureListener failureListener) {
         if (ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED) {
-            checkGPS(successListener);
+            checkGPS(successListener, failureListener);
         } else {
             ActivityCompat.requestPermissions(activity,
                 new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, DefaultConfig.REQUEST_CODE);

@@ -18,6 +18,8 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -76,10 +78,9 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "No Internet", Toast.LENGTH_SHORT).show();
             getDefaultLocationWeather();
         } else {
-            locationHelper.checkLocationPermission(this::processReceivedLocation);
+            locationHelper.checkLocationPermission(this::processReceivedLocation,
+                this::processByDefaultLocation);
         }
-
-
 
         setUpTimeInfo();
 
@@ -93,9 +94,22 @@ public class MainActivity extends AppCompatActivity {
         TextView menu = findViewById(R.id.menu_btn);
         menu.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, LocationActivity.class);
-            startActivity(intent);
+            activityResultLauncher.launch(intent);
         });
     }
+
+    // activity launcher
+    ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+        new ActivityResultContracts.StartActivityForResult(),
+        result -> {
+            if (result.getResultCode() == Activity.RESULT_OK) {
+                Intent data = result.getData();
+                if (data != null) {
+                    appLocation = (AppLocation) data.getSerializableExtra("current_location");
+                    getWeatherData();
+                }
+            }
+        });
 
     Response.Listener<String> hourlyListener = response -> {
         try {
@@ -128,8 +142,8 @@ public class MainActivity extends AppCompatActivity {
             dailyWeatherDao.deleteByLocationId(appLocation.getId());
             dailyWeatherDao.insert(dailyWeathers);
             setUpDailyWeather(dailyWeathers);
-            Date sunrise = new Date(dailyWeathers.get(0).getSunrise() * 1000);
-            Date sunset = new Date(dailyWeathers.get(0).getSunset() * 1000);
+            Date sunrise = new Date(dailyWeathers.get(0).getSunrise());
+            Date sunset = new Date(dailyWeathers.get(0).getSunset());
             setUpSunInfo(sunrise, sunset);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -158,7 +172,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (requestCode == DefaultConfig.REQUEST_CHECK_SETTING) {
             if (resultCode == Activity.RESULT_OK) {
-                locationHelper.getCurrentLocation(this::processReceivedLocation);
+                locationHelper.getCurrentLocation(this::processReceivedLocation,
+                    this::processByDefaultLocation);
             } else {
                 // user don't turn on GPS, set appLocation to default appLocation
                 appLocation = DefaultConfig.DEFAULT_APP_LOCATION;
@@ -166,6 +181,12 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void processByDefaultLocation(Exception e) {
+        Toast.makeText(this, "Failed", Toast.LENGTH_SHORT).show();
+        appLocation = DefaultConfig.DEFAULT_APP_LOCATION;
+        getWeatherData();
     }
 
     private void processReceivedLocation(Location location) {

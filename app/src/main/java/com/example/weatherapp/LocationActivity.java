@@ -81,9 +81,11 @@ public class LocationActivity extends AppCompatActivity {
                             List<AppLocation> savedLocations = locationDao.getAllLocations();
                             savedLocations.stream().filter(o -> o.getName().equals(appLocation.getName())).forEach(o -> locationDao.delete(o));
                             locationDao.insert(appLocation);
+                            AppLocation savedLocation = locationDao.getLocationByName(appLocation.getName());
                             Intent intent = new Intent(LocationActivity.this, MainActivity.class);
-                            intent.putExtra("current_location", appLocation);
-                            startActivity(intent);
+                            intent.putExtra("current_location", savedLocation);
+                            setResult(RESULT_OK, intent);
+                            finish();
                         });
 
                         editSearch.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
