@@ -33,6 +33,4 @@ public abstract class LocationDao {
     @Query("Delete from AppLocation where id = :locationId")
     public abstract void deleteById(long locationId);
 
-    @Query("SELECT * from AppLocation where name = :locationName")
-    public abstract AppLocation getLocationByName(String locationName);
 }
