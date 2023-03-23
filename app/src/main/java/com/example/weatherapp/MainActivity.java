@@ -120,13 +120,6 @@ public class MainActivity extends AppCompatActivity {
             hourlyWeatherDao.deleteByLocationId(appLocation.getId());
             hourlyWeatherDao.insert(hourlyWeathers);
 
-            String currentDescription = hourlyWeathers.get(0).getDescription();
-            setUpCurrentDescriptionInfo(currentDescription);
-
-            int currentTemp = (int) Math.round(
-                hourlyWeathers.get(0).getTemperature() - DefaultConfig.KELVIN_DELTA);
-            setUpCurrentTempInfo(currentTemp + "°");
-
             setUpHourlyWeather(hourlyWeathers);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -320,6 +313,13 @@ public class MainActivity extends AppCompatActivity {
 
         RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(hourlyWeathers);
         recyclerView.setAdapter(rvAdapter);
+        //display temperature
+        int currentTemp = (int) Math.round(
+                hourlyWeathers.get(0).getTemperature() - DefaultConfig.KELVIN_DELTA);
+        setUpCurrentTempInfo(currentTemp + "°");
+        //display description
+        String currentDescription = hourlyWeathers.get(0).getDescription();
+        setUpCurrentDescriptionInfo(currentDescription);
     }
 
     private void setUpDailyWeather(List<DailyWeather> dailyWeathers) {
