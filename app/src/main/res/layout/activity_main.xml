@@ -90,12 +90,12 @@
           android:layout_marginTop="20dp"
           android:layout_below="@+id/daily_weather"
           android:layout_height="wrap_content"
-            android:id="@+id/sun">
+          android:id="@+id/sun">
 
           <RelativeLayout
             android:layout_width="0dp"
             android:padding="15dp"
-            android:layout_marginRight="10dp"
+            android:layout_marginEnd="10dp"
             android:background="@drawable/rv_background"
             android:layout_height="match_parent"
             android:layout_weight="1">
@@ -118,7 +118,7 @@
           <RelativeLayout
             android:layout_width="0dp"
             android:padding="15dp"
-            android:layout_marginLeft="10dp"
+            android:layout_marginStart="10dp"
             android:background="@drawable/rv_background"
             android:layout_height="match_parent"
             android:layout_weight="1">
@@ -136,63 +136,71 @@
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:text="18:10" />
+
           </RelativeLayout>
-
-
 
 
         </LinearLayout>
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_marginHorizontal="15dp"
-            android:layout_marginTop="20dp"
-            android:layout_below="@+id/sun"
-            android:layout_height="wrap_content">
+          android:layout_width="match_parent"
+          android:layout_marginHorizontal="15dp"
+          android:layout_marginTop="20dp"
+          android:layout_below="@+id/sun"
+          android:layout_height="wrap_content"
+          android:baselineAligned="false">
           <RelativeLayout
-              android:layout_width="0dp"
-              android:padding="15dp"
-              android:layout_marginLeft="10dp"
-              android:background="@drawable/rv_background"
-              android:layout_height="match_parent"
-              android:layout_weight="1">
+            android:layout_width="0dp"
+            android:padding="15dp"
+            android:layout_marginEnd="10dp"
+            android:background="@drawable/rv_background"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
 
             <TextView
-                android:id="@+id/feelLike"
-                style="@style/normalTextStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Feel like" />
+              android:id="@+id/feelLike"
+              style="@style/normalTextStyle"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="Feel like" />
             <TextView
-                android:id="@+id/feelLikeContent"
-                android:layout_below="@id/feelLike"
-                style="@style/textLg"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="18:10" />
+              android:id="@+id/feelLikeContent"
+              android:layout_below="@id/feelLike"
+              style="@style/textLg"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="5" />
 
           </RelativeLayout>
 
           <RelativeLayout
-              android:layout_width="0dp"
-              android:padding="15dp"
-              android:layout_marginLeft="10dp"
-              android:background="@drawable/rv_background"
-              android:layout_height="match_parent"
-              android:layout_weight="1">
+            android:layout_width="0dp"
+            android:padding="15dp"
+            android:layout_marginLeft="10dp"
+            android:background="@drawable/rv_background"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
 
             <TextView
-                android:id="@+id/pressure"
-                style="@style/normalTextStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Pressure" />
+              android:id="@+id/pressure"
+              style="@style/normalTextStyle"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="Pressure" />
             <TextView
-                android:id="@+id/pressureContent"
-                android:layout_below="@id/pressure"
-                style="@style/textLg"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0" />
+              android:id="@+id/pressureContent"
+              android:layout_below="@id/pressure"
+              style="@style/textLg"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="0" />
+            <TextView
+              android:id="@+id/pressure_unit"
+              android:layout_below="@+id/pressureContent"
+              style="@style/normalTextStyle"
+              android:paddingLeft="5dp"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="hPa" />
 
           </RelativeLayout>
         </LinearLayout>
