@@ -24,11 +24,11 @@ public class LocationListAdapter extends BaseAdapter {
 
     Context mContext;
     LayoutInflater inflater;
-    private List<AppLocation> animalNamesList = null;
+    private List<AppLocation> locationList = null;
 
     public LocationListAdapter(Context context, List<AppLocation> animalNamesList) {
         mContext = context;
-        this.animalNamesList = animalNamesList;
+        this.locationList = animalNamesList;
         inflater = LayoutInflater.from(mContext);
     }
 
@@ -38,12 +38,12 @@ public class LocationListAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        return animalNamesList.size();
+        return locationList.size();
     }
 
     @Override
     public AppLocation getItem(int position) {
-        return animalNamesList.get(position);
+        return locationList.get(position);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class LocationListAdapter extends BaseAdapter {
             holder = (ViewHolder) view.getTag();
         }
         // Set the results into TextViews
-        holder.name.setText(animalNamesList.get(position).getName());
+        holder.name.setText(locationList.get(position).getName());
 
         return view;
     }
