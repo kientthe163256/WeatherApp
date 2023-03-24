@@ -119,7 +119,8 @@ public class MainActivity extends AppCompatActivity {
                 appLocation.getId());
             hourlyWeatherDao.deleteByLocationId(appLocation.getId());
             hourlyWeatherDao.insert(hourlyWeathers);
-
+            setUpFeelLike(hourlyWeathers.get(0).getFeelsLike());
+            setUpPressure(hourlyWeathers.get(0).getPressure());
             setUpHourlyWeather(hourlyWeathers);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -292,6 +293,15 @@ public class MainActivity extends AppCompatActivity {
         String sunsetTime = Util.formatDate("HH:mm", sunset);
         tvSunrise.setText(sunriseTime);
         tvSunset.setText(sunsetTime);
+    }
+    private void setUpFeelLike(double feelLike){
+        TextView tvFeelLike = findViewById(R.id.feelLikeContent);
+        tvFeelLike.setText(String.valueOf(feelLike));
+    }
+
+    private void setUpPressure(int pressure){
+        TextView tvPressure = findViewById(R.id.pressureContent);
+        tvPressure.setText(String.valueOf(pressure));
     }
 
     private void setUpCurrentTempInfo(String temp) {
