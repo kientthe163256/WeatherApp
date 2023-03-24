@@ -4,6 +4,7 @@ import androidx.annotation.Nullable;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import java.util.TimeZone;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Entity
 public class AppLocation implements Serializable {
+
     @PrimaryKey(autoGenerate = true)
     private long id;
 
@@ -26,7 +28,8 @@ public class AppLocation implements Serializable {
     public AppLocation() {
     }
 
-    public AppLocation(String name, double latitude, double longitude, String state, String country) {
+    public AppLocation(String name, double latitude, double longitude, String state,
+        String country) {
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -34,7 +37,8 @@ public class AppLocation implements Serializable {
         this.country = country;
     }
 
-    public AppLocation(long id, String name, double latitude, double longitude, String state, String country) {
+    public AppLocation(long id, String name, double latitude, double longitude, String state,
+        String country) {
         this.id = id;
         this.name = name;
         this.latitude = latitude;
@@ -93,14 +97,9 @@ public class AppLocation implements Serializable {
 
     @Override
     public String toString() {
-        return "AppLocation{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", latitude=" + latitude +
-                ", longitude=" + longitude +
-                ", state='" + state + '\'' +
-                ", country='" + country + '\'' +
-                '}';
+        return "AppLocation{" + "id=" + id + ", name='" + name + '\'' + ", latitude=" + latitude
+            + ", longitude=" + longitude + ", state='" + state + '\'' + ", country='" + country
+            + '\'' + '}';
     }
 
     public static AppLocation fromJson(JSONObject locationData) throws JSONException {
@@ -117,7 +116,7 @@ public class AppLocation implements Serializable {
     }
 
     public static List<AppLocation> fromJsonArray(JSONArray locationDataArray)
-            throws JSONException {
+        throws JSONException {
         List<AppLocation> locationWeathers = new ArrayList<>();
         for (int i = 0; i < locationDataArray.length(); i++) {
             JSONObject locationData = locationDataArray.getJSONObject(i);
@@ -126,5 +125,4 @@ public class AppLocation implements Serializable {
         }
         return locationWeathers;
     }
-
 }

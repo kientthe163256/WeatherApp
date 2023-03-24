@@ -1,7 +1,6 @@
 package com.example.weatherapp.adapter;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,7 +14,6 @@ import com.example.weatherapp.R;
 import com.example.weatherapp.dao.AppDatabase;
 import com.example.weatherapp.dao.LocationDao;
 import com.example.weatherapp.model.AppLocation;
-import java.util.Collections;
 import java.util.List;
 
 public class RecycleViewLocation extends RecyclerView.Adapter<RecycleViewLocation.ViewHolder>{

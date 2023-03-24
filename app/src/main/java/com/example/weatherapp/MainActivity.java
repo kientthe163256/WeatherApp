@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -56,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     private DailyWeatherDao dailyWeatherDao;
     private ApiService apiService;
     private LocationHelper locationHelper;
+    private Integer timeZoneOffset = 7 * 60 * 60;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,6 +119,9 @@ public class MainActivity extends AppCompatActivity {
             JSONArray hourlyData = jsonResponse.getJSONArray("list");
             List<HourlyWeather> hourlyWeathers = HourlyWeather.fromJsonArray(hourlyData,
                 appLocation.getId());
+
+            timeZoneOffset = jsonResponse.getJSONObject("city").getInt("timezone");
+
             hourlyWeatherDao.deleteByLocationId(appLocation.getId());
             hourlyWeatherDao.insert(hourlyWeathers);
 
@@ -191,6 +196,8 @@ public class MainActivity extends AppCompatActivity {
             List<Address> addresses = geocoder.getFromLocation(location.getLatitude(),
                 location.getLongitude(), 1);
             Address address = addresses.get(0);
+
+            // get timezone
             appLocation.setId(DefaultConfig.CURRENT_LOCATION_ID);
             appLocation.setLatitude(address.getLatitude());
             appLocation.setLongitude(location.getLongitude());
@@ -281,15 +288,15 @@ public class MainActivity extends AppCompatActivity {
 
     private void setUpTimeInfo() {
         TextView tvTime = findViewById(R.id.date_time);
-        String time = Util.formatDate("EE, HH:mm", new Date());
+        String time = Util.formatDate("EE, HH:mm", new Date(), timeZoneOffset);
         tvTime.setText(time);
     }
 
     private void setUpSunInfo(Date sunrise, Date sunset) {
         TextView tvSunrise = findViewById(R.id.sun_rise_time);
         TextView tvSunset = findViewById(R.id.sun_set_time);
-        String sunriseTime = Util.formatDate("HH:mm", sunrise);
-        String sunsetTime = Util.formatDate("HH:mm", sunset);
+        String sunriseTime = Util.formatDate("HH:mm", sunrise, timeZoneOffset);
+        String sunsetTime = Util.formatDate("HH:mm", sunset, timeZoneOffset);
         tvSunrise.setText(sunriseTime);
         tvSunset.setText(sunsetTime);
     }
@@ -313,13 +320,14 @@ public class MainActivity extends AppCompatActivity {
 
         RecyclerViewAdapter rvAdapter = new RecyclerViewAdapter(hourlyWeathers);
         recyclerView.setAdapter(rvAdapter);
-        //display temperature
+        // display temperature
         int currentTemp = (int) Math.round(
-                hourlyWeathers.get(0).getTemperature() - DefaultConfig.KELVIN_DELTA);
+            hourlyWeathers.get(0).getTemperature() - DefaultConfig.KELVIN_DELTA);
         setUpCurrentTempInfo(currentTemp + "°");
-        //display description
+        // display description
         String currentDescription = hourlyWeathers.get(0).getDescription();
         setUpCurrentDescriptionInfo(currentDescription);
+        setUpTimeInfo();
     }
 
     private void setUpDailyWeather(List<DailyWeather> dailyWeathers) {
@@ -339,7 +347,8 @@ public class MainActivity extends AppCompatActivity {
             TableRow row = inflater.inflate(R.layout.daily_weather_layout, tableLayout, false)
                 .findViewById(R.id.row_day);
             TextView date = row.findViewById(R.id.row_day_day);
-            String dateStr = Util.formatDate("EEEE", new Date(dailyWeather.getTime()));
+            String dateStr = Util.formatDate("EEEE", new Date(dailyWeather.getTime()),
+                timeZoneOffset);
             date.setText(dateStr);
 
             ImageView icon = row.findViewById(R.id.row_day_icon);
