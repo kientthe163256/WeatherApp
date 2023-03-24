@@ -11,19 +11,22 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:text="hanoi"
-    android:textSize="20sp" />
+    android:textSize="20sp"
+      />
 
   <TextView
     android:id="@+id/row_country"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_toEndOf="@+id/row_name"
+      android:layout_below="@+id/row_name"
     android:text="VN"
-    android:textSize="20sp" />
+      android:layout_marginLeft="10dp"
+    android:textSize="20sp"
+      />
 
   <Button
     android:id="@+id/btnDelete"
-    android:layout_toEndOf="@+id/row_country"
+      android:layout_alignParentRight="true"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:background="#991b1b"
